@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Simon</string>
+    <string name="welcome_text">Benvenuto su Simon!</string>
+    <string name="start">Inizia</string>
+    <string name="language">Lingua</string>
+    <string name="chglang">Cambia Lingua</string>
+    <string name="del">Cancella</string>
+    <string name="endgame">Fine Partita</string>
+</resources>
+
+
+<!-->dentro a sto file devo mettere tutte le reference per la lingua<-->
