@@ -6,6 +6,7 @@
     <string name="chglang">Cambia Lingua</string>
     <string name="del">Cancella</string>
     <string name="endgame">Fine Partita</string>
+    <string name="clickedSeq">Sequenza premuta apparirà qui!</string>
 </resources>
 
 

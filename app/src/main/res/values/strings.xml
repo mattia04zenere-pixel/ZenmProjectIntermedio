@@ -6,6 +6,8 @@
     <string name="chglang">Change Language</string>
     <string name="del">Delete</string>
     <string name="endgame">End Game</string>
+    <string name="clickedSeq">Clicked sequence will appear here!
+    </string>
 </resources>
 
 
