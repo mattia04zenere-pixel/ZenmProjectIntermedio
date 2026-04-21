@@ -1,3 +1,4 @@
+// codice per prendere le lettere premute dai tasti coi colori
 package com.example.zenmprojectintermedio
 
 import android.content.res.Configuration
@@ -26,200 +27,115 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
-
-//schermata che si presenta all'apertura dell'app
-//flag: Start
-
-//gestisco internamente l'orientamento della mia app
-
-//usare le variabili per ricordare al sequenza di lettere premute
-//come: rememberSaveable o un ViewModel
-
-// versione due con funzioni dedicate per rendere più semplice e leggibile il codice
-
-// funzione che mi da il colore e il testo del pulsante
-
-
-//funzione di prova per vedere se la cosa può funzioanre anche così
 @Composable
 fun SimonSessionScreen(onFinishClicked: (String) -> Unit) {
 
-    //creazione della variabile per essere memorizzata
+    // Questa variabile memorizza la sequenza di lettere premute
     var seqGen by rememberSaveable { mutableStateOf("") }
-
-    //variabile per capire l'orientamento del dispositivo
+    //questa variabile mi serve per capire l'orientamento del dispositivio
+    //come visto in Orientation
     val orientation = LocalConfiguration.current.orientation
 
     @Composable
-    //creo due funzioni, una per la modalità landascape e una per quella portrait
     fun ColorGridPor() {
-
-        Column (
-
-            modifier = Modifier.padding(top = 120.dp)
-
-        ){
-
-
+        Column(modifier = Modifier.padding(top = 120.dp)) {
             Row {
-                SimonButton("R", Color.Red) {}
-                SimonButton("G", Color.Green) {}
+                SimonButton("R", Color.Red) { seqGen += it }
+                SimonButton("G", Color.Green) { seqGen += it }
             }
-
             Row {
-                SimonButton("B", Color.Blue) { }
-                SimonButton("Y", Color.Yellow) { }
+                SimonButton("B", Color.Blue) { seqGen += it }
+                SimonButton("Y", Color.Yellow) { seqGen += it }
             }
-
             Row {
-                SimonButton("M", Color.Magenta) { }
-                SimonButton("C", Color.Cyan) { }
+                SimonButton("M", Color.Magenta) { seqGen += it }
+                SimonButton("C", Color.Cyan) { seqGen += it }
             }
         }
     }
 
-    //funzione per la modalità landascape
     @Composable
     fun ColorGridLan() {
-        Column (modifier = Modifier.padding(start=50.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-
-        ){
-
+        Column(modifier = Modifier.padding(start = 50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row {
-                SimonButton("G", Color.Green) { }
-                SimonButton("Y", Color.Yellow) { }
-                SimonButton("C", Color.Cyan) { }
+                SimonButton("G", Color.Green) { seqGen += it }
+                SimonButton("Y", Color.Yellow) { seqGen += it }
+                SimonButton("C", Color.Cyan) { seqGen += it }
             }
-
             Row {
-                SimonButton("R", Color.Red) { }
-                SimonButton("B", Color.Blue) { }
-                SimonButton("M", Color.Magenta) { }
+                SimonButton("R", Color.Red) { seqGen += it }
+                SimonButton("B", Color.Blue) { seqGen += it }
+                SimonButton("M", Color.Magenta) { seqGen += it }
             }
-
         }
     }
 
-    //funzione per i pulsanti cancella e fine partita
+    //dato che i pulsanti per cancellare e finire la partita sono due e sempre messi allo stesso moodo,
+    //in modo analogo a quanto fatto per i pulsanti del gioco ho creato una funzione per rendere il codice più leggibile e corto
+
     @Composable
     fun Buttons() {
-
-           //i due pulsanti sono sempre messi allo stesso modo, uno di fianco all'altro
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically) {
-
-            Button(
-                //pulsante di fine partita
-                onClick = { onFinishClicked(seqGen) }
-            ) {
+        Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Button(onClick = { onFinishClicked(seqGen) }) {
                 Text(stringResource(R.string.endgame))
-
             }
-            Button(
-                //pulsante per cancellare la sequenza appena premuta
-                onClick = { seqGen = "" }
-
-            ) {
+            Button(onClick = { seqGen = "" }) {
                 Text(stringResource(R.string.del))
             }
-
         }
-
     }
 
 
-    // if per determinare l'orientamento del dispositivo
+    //if che mi cambia l'orientamento, purtroppo ho dovuto creare due griglie per i pulsanti, che altrimenti risultavano uguali
+    //e in modalità landscape mi sembravano brutti da vedere dei pulsanti che fossero 2x3 invece che 3x2
+
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-        Row(
-            modifier = Modifier.fillMaxSize().padding(32.dp),
-
-            verticalAlignment = Alignment.CenterVertically
-
-        )
-        {
-
-            //ho deciso di fare una matrice 3x2 in modalità lendscape in modo che fosse più bello da vedere
-            //Spacer(modifier = Modifier.width(50.dp))
+        Row(modifier = Modifier.fillMaxSize().padding(32.dp), verticalAlignment = Alignment.CenterVertically) {
             ColorGridLan()
-
-            Row(
-
-                modifier = Modifier.fillMaxSize().padding(32.dp),
-                verticalAlignment = Alignment.CenterVertically
-
-                ) {
-
-                Column{
+            Row(modifier = Modifier.fillMaxSize().padding(32.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column {
                     TextField(
                         placeholder = { Text(text = stringResource(R.string.clickedSeq)) },
                         readOnly = true,
-                        value = "",
+                        //mostro la sequenza memorizzata, che viene aggiornata alla pressione dei pulsanti
+                        value = seqGen,
                         onValueChange = { },
                         maxLines = 5
                     )
-
                     Buttons()
-
                 }
             }
-
         }
-        //condizione di default(il telefono è in modalità portrait
     } else {
-
-        Column(
-            modifier = Modifier.fillMaxSize().padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-
-        ) {
-
+        //else per la modalità portrait dell'app
+        Column(modifier = Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             ColorGridPor()
             Spacer(modifier = Modifier.height(32.dp))
-            Column(
-
-                horizontalAlignment = Alignment.CenterHorizontally,
-
-                ) {
-
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 TextField(
-
                     placeholder = { Text(text = stringResource(R.string.clickedSeq)) },
                     readOnly = true,
-                    value = "",
+                    //mostro la sequenza memorizzata, che viene aggiornata alla pressione dei pulsanti
+                    value = seqGen,
                     onValueChange = { },
                     shape = RoundedCornerShape(12.dp),
-                  maxLines = 5
-                    )
+                    maxLines = 5
+                )
                 Buttons()
-
             }
         }
     }
-//fiine della funzione principale della classe
 }
 
-
-//funzione contenitore dei pulsanti che andrò ad utilizzare, visto che sono 6 il codice veniva troppo
-//lungo e con una funzione dedicata è più leggibile
+// funzione che popola i pulsanti della griglia, dato che sono 6 tutti uguali, richiamo 6 volte questa funzione invece di
+// creare 6 pulsanti che facciano la stesa cosa, così il codice risulta molto più corto
 @Composable
-fun SimonButton(label: String, color: Color, onClick: (String) -> Unit, ) {
+fun SimonButton(label: String, color: Color, onClick: (String) -> Unit) {
     Button(
-        onClick = {
-
-         onClick(label)
-
-                  },
-        //shape = RectangleShape,
+        onClick = { onClick(label) },
         colors = ButtonDefaults.buttonColors(containerColor = color, contentColor = Color.Black),
-        modifier = Modifier
-            .padding(4.dp)
-            .width(120.dp)
-            .height(80.dp),
+        modifier = Modifier.padding(4.dp).width(120.dp).height(80.dp),
         shape = RoundedCornerShape(12.dp),
-
-
     ) {
         Text(label)
     }
