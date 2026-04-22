@@ -3,12 +3,8 @@
     <string name="welcome_text">Welcome to Simon!</string>
     <string name="start">Start</string>
     <string name="language">Language</string>
-    <string name="chglang">Change Language</string>
+    <string name="supplang">Supported Languages</string>
     <string name="del">Delete</string>
     <string name="endgame">End Game</string>
-    <string name="clickedSeq">Clicked sequence will appear here!
-    </string>
+    <string name="clickedSeq">Clicked sequence will appear here!</string>
 </resources>
-
-
-<!-->dentro a sto file devo mettere tut,te le reference per la lingua<-->

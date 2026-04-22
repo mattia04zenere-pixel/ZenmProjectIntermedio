@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import  androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 
@@ -73,6 +74,7 @@ Row(
 
 @Composable
 fun MinimalDropdownMenu() {
+
     var expanded by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier
@@ -98,13 +100,32 @@ fun MinimalDropdownMenu() {
             expanded = expanded,
             onDismissRequest = { expanded = false }
 
+
         ) {
+            Text(
+                text = stringResource(R.string.supplang),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+
+
+
+
+            )
+
+
+
             DropdownMenuItem(
+
                 text = { Text("English") },
                 onClick = {
+                    //lingua di default inglese, ma se cambio lingua in un'altra si può mettere
+                    // che ritorni all'inglese grazie al pulsante
                     expanded = false
-                    //default
-                    //fare in modo di cambiare le risorse della mia app
+
+
+
+
 
                 }
             )
@@ -112,9 +133,9 @@ fun MinimalDropdownMenu() {
             DropdownMenuItem(
                 text = { Text("Italian") },
                 onClick = {
+
                     expanded = false
-                    //cambiare lingua in italiano
-                    //cambiare il percorso per dove va a prendere le risorse
+
                 }
             )
             HorizontalDivider()
@@ -128,6 +149,7 @@ fun MinimalDropdownMenu() {
             DropdownMenuItem(
                 text = { Text("Español") },
                 onClick = { expanded = false
+
 
                 }
             )
