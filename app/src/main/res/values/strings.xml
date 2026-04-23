@@ -9,4 +9,7 @@
     <string name="clickedSeq">Clicked sequence will appear here!</string>
     <string name="back">Back</string>
     <string name="games">Games</string>
+    <string name="clickedNum">button pressed</string>
+    <string name="clickedNums">buttons pressed</string>
+    <string name="noGames">No games played yet</string>
 </resources>

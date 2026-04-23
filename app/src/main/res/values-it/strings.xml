@@ -9,4 +9,7 @@
     <string name="clickedSeq">Sequenza premuta apparirà qui!</string>
     <string name="back">Indietro</string>
     <string name="games">Partite</string>
+    <string name="clickedNum">tasto premuto</string>
+    <string name="clickedNums">tasti premuti</string>
+    <string name="noGames">Ancora nessuna partita giocata</string>
 </resources>
