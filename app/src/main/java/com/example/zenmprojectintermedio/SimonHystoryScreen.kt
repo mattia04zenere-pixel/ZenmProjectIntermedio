@@ -23,10 +23,7 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.ceil
 
 @Composable
-fun SimonHystoryScreen(onBackClicked: () -> Unit, seqGen: String) {
-
-    // Per ora creiamo una lista con la partita appena finita
-    val historyList = if (seqGen.isNotEmpty()) listOf(seqGen) else emptyList()
+fun SimonHystoryScreen(onBackClicked: () -> Unit, historyList: List<String>) {
 
     Column(
         modifier = Modifier
