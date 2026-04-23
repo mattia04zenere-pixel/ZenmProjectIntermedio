@@ -32,24 +32,38 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit) {
 
     // Questa variabile memorizza la sequenza di lettere premute
     var seqGen by rememberSaveable { mutableStateOf("") }
+
+    var listSeqGen by rememberSaveable { mutableStateOf(listOf<String>()) }
+
+
     //questa variabile mi serve per capire l'orientamento del dispositivio
     //come visto in Orientation
     val orientation = LocalConfiguration.current.orientation
+
+
+
+    fun updateSeqGen(buttonLabel: String) {
+
+        if(seqGen.length==0)
+            seqGen = buttonLabel
+        else
+            seqGen = seqGen + ", "+ buttonLabel
+    }
 
     @Composable
     fun ColorGridPor() {
         Column(modifier = Modifier.padding(top = 120.dp)) {
             Row {
-                SimonButton("R", Color.Red) { seqGen += it }
-                SimonButton("G", Color.Green) { seqGen += it }
+                SimonButton("R", Color.Red) { updateSeqGen(it) }
+                SimonButton("G", Color.Green) { updateSeqGen(it) }
             }
             Row {
-                SimonButton("B", Color.Blue) { seqGen += it }
-                SimonButton("Y", Color.Yellow) { seqGen += it }
+                SimonButton("B", Color.Blue) { updateSeqGen(it) }
+                SimonButton("Y", Color.Yellow) { updateSeqGen(it) }
             }
             Row {
-                SimonButton("M", Color.Magenta) { seqGen += it }
-                SimonButton("C", Color.Cyan) { seqGen += it }
+                SimonButton("M", Color.Magenta) { updateSeqGen(it)}
+                SimonButton("C", Color.Cyan) { updateSeqGen(it) }
             }
         }
     }
@@ -58,17 +72,20 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit) {
     fun ColorGridLan() {
         Column(modifier = Modifier.padding(start = 50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row {
-                SimonButton("G", Color.Green) { seqGen += it }
-                SimonButton("Y", Color.Yellow) { seqGen += it }
-                SimonButton("C", Color.Cyan) { seqGen += it }
+                SimonButton("G", Color.Green) { updateSeqGen(it) }
+                SimonButton("Y", Color.Yellow) { updateSeqGen(it) }
+                SimonButton("C", Color.Cyan) { updateSeqGen(it) }
             }
             Row {
-                SimonButton("R", Color.Red) { seqGen += it }
-                SimonButton("B", Color.Blue) { seqGen += it }
-                SimonButton("M", Color.Magenta) { seqGen += it }
+                SimonButton("R", Color.Red) { updateSeqGen(it) }
+                SimonButton("B", Color.Blue) { updateSeqGen(it) }
+                SimonButton("M", Color.Magenta) { updateSeqGen(it) }
             }
         }
     }
+
+
+
 
     //dato che i pulsanti per cancellare e finire la partita sono due e sempre messi allo stesso moodo,
     //in modo analogo a quanto fatto per i pulsanti del gioco ho creato una funzione per rendere il codice più leggibile e corto
@@ -76,7 +93,17 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit) {
     @Composable
     fun Buttons() {
         Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = { onFinishClicked(seqGen) }) {
+            Button(onClick = {
+
+                //qui devo aggiungere che passo anche la lista composta dalle partite fatte,
+                // che viene aggiornata e che non si azzera ogni volta che la passo
+
+                //devo usare view model per fare questa cosuccia qui però
+                //gemini mi ha spiegato come usarlo, poi guardare da lì ma mi sembra semplice
+                //lo creo nella classe principale (mainactivity) e lo uso ovunque nelle altre tre schermate
+
+                onFinishClicked(seqGen)
+                seqGen= "" }) {
                 Text(stringResource(R.string.endgame))
             }
             Button(onClick = { seqGen = "" }) {

@@ -7,4 +7,6 @@
     <string name="del">Delete</string>
     <string name="endgame">End Game</string>
     <string name="clickedSeq">Clicked sequence will appear here!</string>
+    <string name="back">Back</string>
+    <string name="games">Games</string>
 </resources>

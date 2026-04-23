@@ -7,4 +7,6 @@
     <string name="del">Cancella</string>
     <string name="endgame">Fine Partita</string>
     <string name="clickedSeq">Sequenza premuta apparirà qui!</string>
+    <string name="back">Indietro</string>
+    <string name="games">Partite</string>
 </resources>
