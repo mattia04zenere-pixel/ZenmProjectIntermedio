@@ -31,6 +31,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 
+
+//schermata aggiunta per evitare di entrare subito nel gioco, in alto a sinistra c'è un icona
+// che contiene un mondo, per indicare le lingue, cliccandoci sopra si visualizzano tutte le lingue supportate, che sono 5
+// ho cercato di fare in modo che cliccando sulla scritta della lingua cambiasse, ma non sono riuscito
+
+
+//le lingue cambiano in base alla lingua del dispositivo, con la lingua di default inglese
 @Composable
 fun SimonStartScreen(onStartClicked: () -> Unit) {
 
@@ -72,6 +79,7 @@ Row(
 }
 
 
+//drop down menu per la visualizzazione delle lingue supportate
 @Composable
 fun MinimalDropdownMenu() {
 
@@ -82,11 +90,13 @@ fun MinimalDropdownMenu() {
     ) {
 
 
-
+      //icona per cambiare lingua, un'immagine di un mondo all'interno della cartella "drawable"
+        // cliccandola si visualizzano le lingue supportate
         IconButton(onClick = { expanded = !expanded }) {
 
 
             Icon(
+                // risorsa dove prende l'immagine
                 painter = painterResource(R.drawable.mondoicon),
                     contentDescription = "Change Language",
                      tint = Color.Unspecified
@@ -102,6 +112,7 @@ fun MinimalDropdownMenu() {
 
 
         ) {
+            // testo del titolo del dropdown che mi da le lingue supportate (stringa che cambia in base alla lingua del dispositivo)
             Text(
                 text = stringResource(R.string.supplang),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
@@ -109,26 +120,23 @@ fun MinimalDropdownMenu() {
                 color = MaterialTheme.colorScheme.primary
 
 
-
-
             )
 
 
+            //in questo caso ill nome della lingua supportata è scritto nella stessa lingua supportata, ad esempio se ho la lingua tedesco, la stringa
+            // che mi dice che l'italiano è supportato sarà scritta in italiano, quindi ho scritto
+            // direttamente delle stringhe con il nome della lignua e non ho usato un R.string
 
+            //lingua di default inglese
             DropdownMenuItem(
 
                 text = { Text("English") },
                 onClick = {
-                    //lingua di default inglese, ma se cambio lingua in un'altra si può mettere
-                    // che ritorni all'inglese grazie al pulsante
                     expanded = false
-
-
-
-
 
                 }
             )
+            // solo per estetica ho aggiunto un horizontal divider per separare ogni lingua
             HorizontalDivider()
             DropdownMenuItem(
                 text = { Text("Italian") },

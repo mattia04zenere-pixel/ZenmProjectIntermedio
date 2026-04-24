@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Simon</string>
+    <string name="welcome_text">Willkommen bei Simon!</string>
+    <string name="start">Starten</string>
+    <string name="language">Sprache</string>
+    <string name="supplang">Unterstützte Sprachen</string>
+    <string name="del">Löschen</string>
+    <string name="endgame">Spiel beenden</string>
+    <string name="clickedSeq">Die angeklickte Sequenz wird hier angezeigt!</string>
+    <string name="back">Zurück</string>
+    <string name="games">Spiele</string>
+    <string name="clickedNum">Taste gedrückt</string>
+    <string name="clickedNums">Tasten gedrückt</string>
+    <string name="noGames">Noch keine Spiele gespielt</string>
+</resources>

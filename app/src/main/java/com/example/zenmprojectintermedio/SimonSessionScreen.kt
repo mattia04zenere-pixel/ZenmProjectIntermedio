@@ -1,4 +1,3 @@
-// codice per prendere le lettere premute dai tasti coi colori
 package com.example.zenmprojectintermedio
 
 import android.content.res.Configuration
@@ -33,15 +32,14 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit) {
     // Questa variabile memorizza la sequenza di lettere premute
     var seqGen by rememberSaveable { mutableStateOf("") }
 
-    var listSeqGen by rememberSaveable { mutableStateOf(listOf<String>()) }
-
-
     //questa variabile mi serve per capire l'orientamento del dispositivio
     //come visto in Orientation
     val orientation = LocalConfiguration.current.orientation
 
 
-
+//funzione di aggiornamento della stringa, che viene richiamata da ogni pulsante, non è composable dato che
+    // si possono fare chiamate composable solo da funzioni composable
+    //aggiunta questa funzione per evitare di scrivere 12 volte lo stesso if
     fun updateSeqGen(buttonLabel: String) {
 
         if(seqGen.length==0)
@@ -50,6 +48,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit) {
             seqGen = seqGen + ", "+ buttonLabel
     }
 
+//grligia dei pulsanti per la modalità portrait
     @Composable
     fun ColorGridPor() {
         Column(modifier = Modifier.padding(top = 120.dp)) {
@@ -68,6 +67,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit) {
         }
     }
 
+    //griglia dei pulsanti per la modalità landscape
     @Composable
     fun ColorGridLan() {
         Column(modifier = Modifier.padding(start = 50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -95,17 +95,12 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit) {
         Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Button(onClick = {
 
-                //qui devo aggiungere che passo anche la lista composta dalle partite fatte,
-                // che viene aggiornata e che non si azzera ogni volta che la passo
-
-                //devo usare view model per fare questa cosuccia qui però
-                //gemini mi ha spiegato come usarlo, poi guardare da lì ma mi sembra semplice
-                //lo creo nella classe principale (mainactivity) e lo uso ovunque nelle altre tre schermate
-
+               //passo alla schermata successiva la seqGen, e subito dopo la cancello
                 onFinishClicked(seqGen)
                 seqGen= "" }) {
                 Text(stringResource(R.string.endgame))
             }
+            //pulsante cancella che azzera la stringa della sequenza
             Button(onClick = { seqGen = "" }) {
                 Text(stringResource(R.string.del))
             }
@@ -115,6 +110,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit) {
 
     //if che mi cambia l'orientamento, purtroppo ho dovuto creare due griglie per i pulsanti, che altrimenti risultavano uguali
     //e in modalità landscape mi sembravano brutti da vedere dei pulsanti che fossero 2x3 invece che 3x2
+    // ho mantenuto però l'ordine dei colori, sono praticamente li stessi ma girati
 
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
         Row(modifier = Modifier.fillMaxSize().padding(32.dp), verticalAlignment = Alignment.CenterVertically) {
