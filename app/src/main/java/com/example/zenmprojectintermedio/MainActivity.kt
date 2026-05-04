@@ -42,17 +42,9 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "home",
+                        startDestination = "finish/{seqGen}",
                         modifier = Modifier.padding(innerPadding)
                     ) {
-
-                        composable("home") {
-                            SimonStartScreen(
-                                onStartClicked = {
-                                    navController.navigate("game")
-                                }
-                            )
-                        }
 
                         composable("game") {
                             SimonSessionScreen(

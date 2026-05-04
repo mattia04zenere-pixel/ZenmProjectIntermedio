@@ -39,7 +39,7 @@ import androidx.compose.ui.res.painterResource
 
 //le lingue cambiano in base alla lingua del dispositivo, con la lingua di default inglese
 @Composable
-fun SimonStartScreen(onStartClicked: () -> Unit) {
+fun SimonGameDetailsScreen(onStartClicked: () -> Unit) {
 
 Row(
     modifier = Modifier.fillMaxWidth(),

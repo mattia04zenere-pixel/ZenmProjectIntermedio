@@ -23,7 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.ceil
 import android.content.res.Configuration
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.ui.text.style.TextOverflow
 
 //funzione principale per la visualizzazione delle parrite giocate
@@ -36,54 +38,80 @@ fun SimonHystoryScreen(onBackClicked: () -> Unit, historyList: List<String>) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Pulsante per tornare indietro alla schermata 2
-        Button(onClick = onBackClicked) {
-            Text("< " + stringResource(R.string.back))
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+
+
+        //Spacer(modifier = Modifier.height(16.dp))
+
+
 
         Text(
-            text = stringResource(R.string.games),
+            text = stringResource(R.string.games)+":",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier
+                .align(Alignment.CenterHorizontally)
                 .padding(bottom = 8.dp)
                 .then(if (orientation == Configuration.ORIENTATION_LANDSCAPE) Modifier.align(Alignment.CenterHorizontally) else Modifier)
         )
 
-        //se non ci sono partite giocate mostro un messaggio inerente
-        if (historyList.isEmpty()) {
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
 
-            Text(
-                text = stringResource(R.string.noGames),
-                fontSize = 16.sp,
-                color = Color.Gray,
-                modifier = Modifier
-                    .padding(top = 16.dp)
-                    .then(if (orientation == Configuration.ORIENTATION_LANDSCAPE) Modifier.align(Alignment.CenterHorizontally) else Modifier)
-            )
-        } else {
-            //lazycolumn per la visualizzazione delle partite giocate,
-            //se non si premono tasti si visualizzano le partite giocate fino a quel momento oppure il messaggio
-            // che non sono ancora state giocate delle partite
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(
-                        if (orientation == Configuration.ORIENTATION_LANDSCAPE)
-                            Modifier
-                            .widthIn(max = 600.dp)
-                            .align(Alignment.CenterHorizontally)
-                        else Modifier
-                    ),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                itemsIndexed(historyList) { index, sequence ->
-                    HistoryItem(index + 1, sequence)
+            //se non ci sono partite giocate mostro un messaggio inerente
+            if (historyList.isEmpty()) {
+
+                Text(
+                    text = stringResource(R.string.noGames),
+                    fontSize = 16.sp,
+                    color = Color.Gray,
+                    modifier = Modifier
+                       .align(Alignment.TopCenter)
+                        .padding(top = 16.dp)
+                        .then(if (orientation == Configuration.ORIENTATION_LANDSCAPE) Modifier.align(Alignment.TopCenter) else Modifier)
+                )
+            } else {
+                //lazycolumn per la visualizzazione delle partite giocate,
+                //se non si premono tasti si visualizzano le partite giocate fino a quel momento oppure il messaggio
+                // che non sono ancora state giocate delle partite
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+
+                        .then(
+                            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+                                Modifier
+                                    .widthIn(max = 600.dp)
+                                    .align(Alignment.TopCenter)
+                            else Modifier
+                        ),
+                    contentPadding = PaddingValues(bottom = 70.dp)
+                ) {
+                    itemsIndexed(historyList) { index, sequence ->
+                        HistoryItem(index + 1, sequence)
+                    }
                 }
             }
+
+            // Pulsante per tornare indietro alla schermata 1
+            ExtendedFloatingActionButton(
+                onClick = onBackClicked,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+            ) {
+                Text(stringResource(R.string.startGame),
+                    fontSize = 16.sp)
+            }
+
         }
+
+
+
+
+
+
+
+
     }
 }
 
