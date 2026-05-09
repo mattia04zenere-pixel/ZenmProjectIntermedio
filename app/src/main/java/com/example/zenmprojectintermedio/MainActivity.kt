@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.toMutableStateList
@@ -17,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.zenmprojectintermedio.ui.theme.ZenmProjectIntermedioTheme
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.zenmprojectintermedio.SimonGameDetailsScreen
 
 
 //classe principale del progetto Simon
@@ -37,6 +40,11 @@ class MainActivity : ComponentActivity() {
                 )
             ) { mutableStateListOf<String>() }
 
+            // vorrei che clicando su un elemento della lazycolumn, esso venisse passato alla schermata SimonGameDetailsScreen,
+            // attraverso un remember savable, in modo che l'elemento della lazy column possa essere visualizzato
+            // più in grande e senza troncamenti. Qui memorizziamo l'indice dell'elemento selezionato.
+            val selectedIndex = rememberSaveable { mutableStateOf(-1) }
+
             //solita organizzazione delle schermata per la navigazione interna
             ZenmProjectIntermedioTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -46,6 +54,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
 
+
                         composable("game") {
                             SimonSessionScreen(
                                 onFinishClicked = { seq ->
@@ -54,16 +63,35 @@ class MainActivity : ComponentActivity() {
                                         historyList.add(seq)
                                     }
                                     navController.navigate("finish/${Uri.encode(seq)}")
-                                }
+                                },
+                                onBackClicked = { navController.navigate("finish/{seqGen}") }
                             )
                         }
 
                         composable("finish/{seqGen}") {
+                                backStackEntry ->
                             //qui prima passavo una lista intera, mentre ora passo tutta la lista
                             SimonHystoryScreen(
                                 onBackClicked = { navController.navigate("game") },
-                                historyList = historyList
+                                historyList = historyList,
+                                onItemClicked = { index ->
+                                    // Salviamo l'indice selezionato e navighiamo ai dettagli
+                                    selectedIndex.value = index
+                                    navController.navigate("details")
+                                }
                             )
+                        }
+
+                        composable("details") {
+                            // Visualizziamo la schermata dei dettagli usando l'indice salvato nel rememberSaveable
+                            val index = selectedIndex.value
+                            if (index != -1 && index < historyList.size) {
+                                SimonGameDetailsScreen(
+                                    gameNumber = index + 1,
+                                    sequence = historyList[index],
+                                    onBackClicked = { navController.popBackStack() }
+                                )
+                            }
                         }
                     }
                 }

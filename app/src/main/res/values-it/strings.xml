@@ -12,4 +12,6 @@
     <string name="clickedNum">tasto premuto</string>
     <string name="clickedNums">tasti premuti</string>
     <string name="noGames">Ancora nessuna partita giocata</string>
+    <string name="startGame">Inizia Partita</string>
+    <string name="points">Punti</string>
 </resources>

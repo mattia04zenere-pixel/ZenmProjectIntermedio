@@ -12,4 +12,6 @@
     <string name="clickedNum">Taste gedrückt</string>
     <string name="clickedNums">Tasten gedrückt</string>
     <string name="noGames">Noch keine Spiele gespielt</string>
+    <string name="startGame">Spiel starten</string>
+    <string name="points">Punkte</string>
 </resources>
