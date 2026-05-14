@@ -1,5 +1,6 @@
 package com.example.zenmprojectintermedio
 
+import android.content.Context
 import android.os.Bundle
 import android.net.Uri
 import androidx.activity.ComponentActivity
@@ -21,24 +22,40 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.zenmprojectintermedio.SimonGameDetailsScreen
 
-
 //classe principale del progetto Simon
 class MainActivity : ComponentActivity() {
+
+    // Metodo per salvare la lista delle partite nelle SharedPreferences
+    private fun saveHistory(history: List<String>) {
+        val prefs = getSharedPreferences("simon_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putString("history_data", history.joinToString("§")).apply()
+    }
+
+    // Metodo per caricare la lista delle partite dalle SharedPreferences
+    private fun loadHistory(): List<String> {
+        val prefs = getSharedPreferences("simon_prefs", Context.MODE_PRIVATE)
+        val savedData = prefs.getString("history_data", "") ?: ""
+        return if (savedData.isEmpty()) emptyList() else savedData.split("§")
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
 
+            // Carichiamo i dati salvati all'avvio
+            val savedHistory = remember { loadHistory() }
+
             // genero una lista di partite con remember savable, in questo modo ogni schermata chiamata da qui
             // potrà vederla, in questo modo all'apertura dell'app viene generata la lista e alla sua chiusara
-            // verrà eliminata
+            // verrà eliminata (Nota: ora inizializzata con i dati persistenti)
             val historyList = rememberSaveable(
                 saver = listSaver(
                     save = { it.toList() },
                     restore = { it.toMutableStateList() }
                 )
-            ) { mutableStateListOf<String>() }
+            ) { savedHistory.toMutableStateList() }
 
             // vorrei che clicando su un elemento della lazycolumn, esso venisse passato alla schermata SimonGameDetailsScreen,
             // attraverso un remember savable, in modo che l'elemento della lazy column possa essere visualizzato
@@ -50,7 +67,8 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "finish/{seqGen}",
+                        // Modificato per partire direttamente dalla schermata history (mappata su finish/{seqGen})
+                        startDestination = "finish/view",
                         modifier = Modifier.padding(innerPadding)
                     ) {
 
@@ -61,10 +79,12 @@ class MainActivity : ComponentActivity() {
                                     //aggiungo la sequenza appena premuta alla lista di sequenze
                                     if (seq.isNotEmpty()) {
                                         historyList.add(seq)
+                                        // Salvataggio persistente su SharedPreferences
+                                        saveHistory(historyList.toList())
                                     }
                                     navController.navigate("finish/${Uri.encode(seq)}")
                                 },
-                                onBackClicked = { navController.navigate("finish/{seqGen}") }
+                                onBackClicked = { navController.navigate("finish/view") }
                             )
                         }
 

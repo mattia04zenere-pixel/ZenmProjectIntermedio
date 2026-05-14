@@ -14,10 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -33,12 +31,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-
 @Composable
 fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> Unit) {
 
     // Questa variabile memorizza la sequenza di lettere premute
     var seqGen by rememberSaveable { mutableStateOf("") }
+    // variabile utilizzata per cambiare valore e utilizzo del pulsante "avvia partita" e "fine partita"
+    var started by rememberSaveable { mutableStateOf(false) }
+
+    //aggiungere una lista dinamica che aumenta sempre di 1 la sua lunghezza
+    //in modo che possa essere usata per il calcolo del punteggio e per vedere gli errori dell'utente
+    //poi dovrebbe essere che se sbagli esce o si blocca, mentre se è giusto continua ad andare avanti
+
+
 
     //questa variabile mi serve per capire l'orientamento del dispositivio
     //come visto in Orientation
@@ -49,7 +54,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     // si possono fare chiamate composable solo da funzioni composable
     //aggiunta questa funzione per evitare di scrivere 12 volte lo stesso if
     fun updateSeqGen(buttonLabel: String) {
-
+        if(started)
         if (seqGen.length == 0)
             seqGen = buttonLabel
         else
@@ -58,39 +63,39 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
 
     //grligia dei pulsanti per la modalità portrait
     @Composable
-    fun ColorGridPor() {
+    fun ColorGridPor(isStarted: Boolean) {
         Column(modifier = Modifier.padding(top = 120.dp)) {
             Row {
-                SimonButton("R", Color.Red) { updateSeqGen(it) }
-                SimonButton("G", Color.Green) { updateSeqGen(it) }
+                SimonButton("R", Color.Red,isStarted) { updateSeqGen(it) }
+                SimonButton("G", Color.Green,isStarted) { updateSeqGen(it) }
             }
             Row {
-                SimonButton("B", Color.Blue) { updateSeqGen(it) }
-                SimonButton("Y", Color.Yellow) { updateSeqGen(it) }
+                SimonButton("B", Color.Blue,isStarted) { updateSeqGen(it) }
+                SimonButton("Y", Color.Yellow,isStarted) { updateSeqGen(it) }
             }
             Row {
-                SimonButton("M", Color.Magenta) { updateSeqGen(it) }
-                SimonButton("C", Color.Cyan) { updateSeqGen(it) }
+                SimonButton("M", Color.Magenta,isStarted) { updateSeqGen(it) }
+                SimonButton("C", Color.Cyan,isStarted) { updateSeqGen(it) }
             }
         }
     }
 
     //griglia dei pulsanti per la modalità landscape
     @Composable
-    fun ColorGridLan() {
+    fun ColorGridLan(isStarted: Boolean) {
         Column(
             modifier = Modifier.padding(start = 50.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row {
-                SimonButton("G", Color.Green) { updateSeqGen(it) }
-                SimonButton("Y", Color.Yellow) { updateSeqGen(it) }
-                SimonButton("C", Color.Cyan) { updateSeqGen(it) }
+                SimonButton("G", Color.Green,isStarted) { updateSeqGen(it) }
+                SimonButton("Y", Color.Yellow,isStarted) { updateSeqGen(it) }
+                SimonButton("C", Color.Cyan,isStarted) { updateSeqGen(it) }
             }
             Row {
-                SimonButton("R", Color.Red) { updateSeqGen(it) }
-                SimonButton("B", Color.Blue) { updateSeqGen(it) }
-                SimonButton("M", Color.Magenta) { updateSeqGen(it) }
+                SimonButton("R", Color.Red,isStarted) { updateSeqGen(it) }
+                SimonButton("B", Color.Blue,isStarted) { updateSeqGen(it) }
+                SimonButton("M", Color.Magenta,isStarted) { updateSeqGen(it) }
             }
         }
     }
@@ -107,20 +112,34 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
             // Cambiato in ExtendedFloatingActionButton per coerenza grafica
             ExtendedFloatingActionButton(
                 onClick = {
+
+                    started = true
+                    if (started && seqGen.isNotEmpty()){
                     //passo alla schermata successiva la seqGen, e subito dopo la cancello
-                    onFinishClicked(seqGen)
+                        onFinishClicked(seqGen)
                     seqGen = ""
+                        started=false
+                }
+
+
+
                 },
                 modifier = Modifier.padding(4.dp)
             ) {
-                Text(stringResource(R.string.endgame))
+                if(!started) {
+                    Text(stringResource(R.string.startGame))
+                }
+                else {
+                    Text(stringResource(R.string.endGame))
+                }
+
             }
-            //pulsante cancella che azzera la stringa della sequenza
+            //pulsante mette il gioco in pausa
             ExtendedFloatingActionButton(
-                onClick = { seqGen = "" },
+                onClick = { },
                 modifier = Modifier.padding(4.dp)
             ) {
-                Text(stringResource(R.string.del))
+                Text(stringResource(R.string.pause))
             }
         }
     }
@@ -129,7 +148,6 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     //if che mi cambia l'orientamento, purtroppo ho dovuto creare due griglie per i pulsanti, che altrimenti risultavano uguali
     //e in modalità landscape mi sembravano brutti da vedere dei pulsanti che fossero 2x3 invece che 3x2
     // ho mantenuto però l'ordine dei colori, sono praticamente li stessi ma girati
-
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -145,7 +163,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                 modifier = Modifier.fillMaxSize().padding(32.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                ColorGridLan()
+                ColorGridLan(started)
                 Row(
                     modifier = Modifier.fillMaxSize().padding(32.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -174,7 +192,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
             ) {
 
 
-                ColorGridPor()
+                ColorGridPor(started)
                 Spacer(modifier = Modifier.height(32.dp))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     TextField(
@@ -191,7 +209,19 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
             }
 
             // Pulsante per tornare alla cronologia
-            ExtendedFloatingActionButton(onClick = onBackClicked,
+            ExtendedFloatingActionButton(
+                //ora il pulsante back gestisce sia il click per tornare indietro che per finire la partita
+                //finisce la partita solo se è stata cliccata almeno una sequenza,altrimenti non salva la partita
+                    onClick = {
+
+                        if (started && seqGen.isNotEmpty()) {
+                            //passo alla schermata successiva la seqGen, e subito dopo la cancello
+                            onFinishClicked(seqGen)
+                            seqGen = ""
+                            started = false
+                        }else
+                            onBackClicked()
+                    },
                     modifier = Modifier.align(Alignment.TopStart).padding(top = 20.dp, start = 20.dp)
                ) {
                 Text(text ="< "+ stringResource(R.string.back))
@@ -203,22 +233,29 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
 // funzione che popola i pulsanti della griglia, dato che sono 6 tutti uguali, richiamo 6 volte questa funzione invece di
 // creare 6 pulsanti che facciano la stesa cosa, così il codice risulta molto più corto
 @Composable
-fun SimonButton(label: String, color: Color, onClick: (String) -> Unit) {
-    // Sorgente di interazione per rilevare quando il pulsante viene premuto
+fun SimonButton(label: String, color: Color, isEnabled: Boolean, onClick: (String) -> Unit) {
+    //variabili per capire se è stato premuto o no
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    
-    // Forma che cambia solo durante la pressione (diventa rotondo quando premuto)
-    val currentShape = if (isPressed) CircleShape else RoundedCornerShape(12.dp)
 
-    // Cambiato in FloatingActionButton per un effetto grafico più moderno
-    FloatingActionButton(
+    // Cambia di forma se premuto, così da far vedere che è stato premuto
+    val currentShape = if (isPressed && isEnabled) CircleShape else RoundedCornerShape(12.dp)
+
+    Button(
         onClick = { onClick(label) },
+        //copiato il controllo dello stato come in simple BG PLayer
+        enabled = isEnabled,
         interactionSource = interactionSource,
-        containerColor = color,
-        contentColor = Color.Black,
-        modifier = Modifier.padding(4.dp).width(120.dp).height(80.dp),
         shape = currentShape,
+        modifier = Modifier.padding(4.dp).width(120.dp).height(80.dp),
+        // Parametri colore corretti per il componente Button
+        colors = ButtonDefaults.buttonColors(
+            //aggiunti i colori per quando è premibile oppure no
+            containerColor = color,
+            contentColor = Color.Black,
+            disabledContainerColor = Color.LightGray,
+            disabledContentColor = Color.Gray
+        )
     ) {
         Text(label)
     }

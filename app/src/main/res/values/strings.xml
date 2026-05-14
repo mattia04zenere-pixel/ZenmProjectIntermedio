@@ -12,6 +12,10 @@
     <string name="clickedNum">button pressed</string>
     <string name="clickedNums">buttons pressed</string>
     <string name="noGames">No games played yet</string>
+    <string name="play">Play</string>
+    <string name="endGame">End Game</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Resume</string>
     <string name="startGame">Start Game</string>
     <string name="points">Points</string>
 </resources>

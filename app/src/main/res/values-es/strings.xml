@@ -12,6 +12,10 @@
     <string name="clickedNum">tecla pulsada</string>
     <string name="clickedNums">teclas pulsadas</string>
     <string name="noGames">Aún no se han jugado partidas</string>
+    <string name="play">Jugar</string>
+    <string name="endGame">Fin del juego</string>
+    <string name="pause">Pausa</string>
+    <string name="resume">Reanudar</string>
     <string name="startGame">Iniciar partida</string>
-    <string name="points">Pontos</string>
+    <string name="points">Puntos</string>
 </resources>

@@ -21,14 +21,10 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.ceil
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 
 //funzione principale per la visualizzazione delle parrite giocate
@@ -120,7 +116,7 @@ fun SimonHystoryScreen(
 
                     .padding(bottom = if(orientation == Configuration.ORIENTATION_LANDSCAPE){ 50.dp}else{  200.dp})
             ) {
-                Text(stringResource(R.string.startGame),
+                Text(stringResource(R.string.play),
                     fontSize = 16.sp)
             }
 
@@ -151,14 +147,6 @@ fun HistoryItem(gameNumber: Int, sequence: String) {
             androidx.compose.foundation.layout.Arrangement.Start
 
     ) {
-/*        Text(
-            //il titolo della partita, in pratica la posizione che occupa all'interno
-            //della lista delle partite
-            text = "#$gameNumber",
-            fontSize = 48.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(end = 20.dp)
-        )*/
 
         //colonna per la visualizzazione della sequenza di tasti premuti
         // in modalità landscape è centrale e non occupa tutto lo schermo, così da renderla più bella livello visivo
@@ -178,9 +166,10 @@ fun HistoryItem(gameNumber: Int, sequence: String) {
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Medium,
                     modifier= Modifier.padding(start = 20.dp)
+                        .widthIn(max = 40.dp ,min=40.dp)
                 )
 
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.padding(16.dp))
                 Text(
 
                     //testo che visualizza la sequenza di tasti premuti, con troncamento a dure righe al massimo
