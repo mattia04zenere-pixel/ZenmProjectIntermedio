@@ -18,4 +18,6 @@
     <string name="resume">Resume</string>
     <string name="startGame">Start Game</string>
     <string name="points">Points</string>
+    <string name="point">Point</string>
+    <string name="level">Level</string>
 </resources>

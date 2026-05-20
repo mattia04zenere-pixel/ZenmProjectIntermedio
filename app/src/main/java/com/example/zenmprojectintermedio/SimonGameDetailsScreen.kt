@@ -25,35 +25,35 @@ import androidx.compose.ui.unit.sp
 // Funzione interprete interna per convertire i tag in colori reali e aggiungere le virgole di separazione
 fun decodeStringToColorsDetails(savedString: String): AnnotatedString {
     return buildAnnotatedString {
-        var stileAttuale: Color = Color.Black // Di base partiamo in Nero (le mosse corrette dell'utente)
+        var currentStyle: Color = Color.Black // Di base partiamo in Nero (le mosse corrette dell'utente)
 
         // Creiamo una stringa pulita senza i tag per sapere quanti caratteri effettivi andremo a stampare
-        val stringaSenzaTag = savedString.replace("/", "").replace("&", "")
-        var contatoreCaratteriStampati = 0
+        val cleanedSeq = savedString.replace("/", "").replace("&", "")
+        var printCharCount = 0
 
         for (char in savedString) {
             when (char) {
                 '/' -> {
                     // Quando incontra '/', la lettera successiva (l'errore) diventa Rosso Acceso
-                    stileAttuale = Color(0xFFFF0000)
+                    currentStyle = Color(0xFFFF0000)
                     continue // Salta la stampa del carattere '/' grafico
                 }
                 '&' -> {
                     // Quando incontra '&', tutto il resto della sequenza non premuta diventa Rosso Chiaro
-                    stileAttuale = Color(0xFFFF8080)
+                    currentStyle = Color(0xFFFF8080)
                     continue // Salta la stampa del carattere '&' grafico
                 }
             }
 
             // Applica il colore impostato in questo momento al carattere attuale (R, G, B, ecc.)
-            withStyle(style = SpanStyle(color = stileAttuale, fontWeight = FontWeight.Bold)) {
+            withStyle(style = SpanStyle(color = currentStyle, fontWeight = FontWeight.Bold)) {
                 append(char)
             }
 
-            contatoreCaratteriStampati++
+            printCharCount++
 
             // Se non è l'ultimo carattere effettivo della stringa, aggiungiamo il separatore in Nero
-            if (contatoreCaratteriStampati < stringaSenzaTag.length) {
+            if (printCharCount < cleanedSeq.length) {
                 withStyle(style = SpanStyle(color = Color.Black, fontWeight = FontWeight.Normal)) {
                     append(", ")
                 }
@@ -64,7 +64,6 @@ fun decodeStringToColorsDetails(savedString: String): AnnotatedString {
 
 @Composable
 fun SimonGameDetailsScreen(
-    gameNumber: Int,
     sequence: String,
     onBackClicked: () -> Unit
 ) {
@@ -78,25 +77,37 @@ fun SimonGameDetailsScreen(
 
         //numero di pulsanti premuti senza errori visualizzato come primo elemento
         // Modificato per calcolare i punti reali basandosi solo su ciò che l'utente ha indovinato (prima del tag '/')
-        val cleanUserPart = sequence.substringBefore('/')
-        val points = if (cleanUserPart.isEmpty()) 0 else cleanUserPart.length
+        val cleanUserPart = sequence.replace("/", "").replace("&", "")
+        //calcolo del punteggio fatto dal giocatore (prende la sequenza precedente)
+        val points = if (cleanUserPart.isEmpty()) 0 else cleanUserPart.length - 1
+
+        // Gestione grammaticale corretta per Punti/Punto
+        val pointsText = if (points == 1) {
+            "$points " + stringResource(R.string.point)
+        } else {
+            "$points " + stringResource(R.string.points)
+        }
 
         Text(
-            text = "$points " + stringResource(R.string.points),
+            text = pointsText,
             fontSize = 80.sp,
             fontWeight = FontWeight.Bold
         )
 
         // Il conteggio totale dei clic visibili (inclusi errore e rimanenti del PC)
-        val stringaSenzaTag = sequence.replace("/", "").replace("&", "")
-        val count = stringaSenzaTag.length
+        val count = cleanUserPart.length
 
-        val textCount = if (count == 1) {
+        //vecchia stringa rimossa, ora dice il livello del gioco cui si è arrivati
+        // livello 1 è il primo, si sale a mano a mano che le stringhe diventano più lunghe
+        val textCount = stringResource(R.string.level)+" " + count.toString()
+
+
+      /*      if (count == 1) {
             "$count " + stringResource(R.string.clickedNum)
         } else {
             "$count " + stringResource(R.string.clickedNums)
         }
-
+*/
         Text(
             text = textCount,
             fontSize = 24.sp,
@@ -104,7 +115,7 @@ fun SimonGameDetailsScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        Spacer(modifier = Modifier.Companion.height(32.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // Sequenza completa visualizzata in grande e senza troncamenti
         Text(
@@ -112,7 +123,7 @@ fun SimonGameDetailsScreen(
             text = decodeStringToColorsDetails(sequence),
             fontSize = 32.sp,
             lineHeight = 40.sp,
-            textAlign = TextAlign.Companion.Center
+            textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(48.dp))

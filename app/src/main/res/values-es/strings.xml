@@ -1,21 +1,23 @@
 <resources>
     <string name="app_name">Simon</string>
     <string name="welcome_text">¡Bienvenido a Simon!</string>
-    <string name="start">Iniciar</string>
+    <string name="start">Comenzar</string>
     <string name="language">Idioma</string>
-    <string name="supplang">Idiomas admitidos</string>
+    <string name="supplang">Idiomas compatibles</string>
     <string name="del">Eliminar</string>
-    <string name="endgame">Fin del gioco</string>
+    <string name="endgame">Fin de la partida</string>
     <string name="clickedSeq">¡La secuencia pulsada aparecerá aquí!</string>
     <string name="back">Atrás</string>
     <string name="games">Partidas</string>
-    <string name="clickedNum">tecla pulsada</string>
-    <string name="clickedNums">teclas pulsadas</string>
+    <string name="clickedNum">botón pulsado</string>
+    <string name="clickedNums">botones pulsados</string>
     <string name="noGames">Aún no se han jugado partidas</string>
     <string name="play">Jugar</string>
-    <string name="endGame">Fin del juego</string>
+    <string name="endGame">Fin de la partida</string>
     <string name="pause">Pausa</string>
     <string name="resume">Reanudar</string>
     <string name="startGame">Iniciar partida</string>
     <string name="points">Puntos</string>
+    <string name="point">Punto</string>
+    <string name="level">Nivel</string>
 </resources>

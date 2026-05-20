@@ -2,7 +2,6 @@ package com.example.zenmprojectintermedio
 
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,7 +29,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.ceil
 
 //funzione principale per la visualizzazione delle parrite giocate
 @Composable
@@ -46,10 +44,6 @@ fun SimonHystoryScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-
-        //Spacer(modifier = Modifier.height(16.dp))
-
-        //Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = stringResource(R.string.games)+":",
@@ -119,7 +113,7 @@ fun SimonHystoryScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
 
-                    .padding(bottom = if(orientation == Configuration.ORIENTATION_LANDSCAPE){ 50.dp}else{  200.dp})
+                    .padding(bottom = if(orientation == Configuration.ORIENTATION_LANDSCAPE){ 20.dp}else{  200.dp})
             ) {
                 Text(stringResource(R.string.play),
                     fontSize = 16.sp)
@@ -137,39 +131,38 @@ fun SimonHystoryScreen(
 // Funzione interprete per convertire i tag speciali in colori reali nella lista della cronologia
 fun decodeStringToColors(savedString: String): AnnotatedString {
     return buildAnnotatedString {
-        var stileAttuale: Color =
+        var currentStyle: Color =
             Color.Black // Di base partiamo in Nero (le mosse corrette dell'utente)
-        val stringaSenzaTag = savedString.replace("/", "").replace("&", "")
-        var contatoreCaratteriStampati = 0
+        val cleanedSeq = savedString.replace("/", "").replace("&", "")
+        var printCharCount = 0
         for (char in savedString) {
             when (char) {
                 '/' -> {
                     // Quando incontra '/', la lettera successiva (l'errore) diventa Rosso Acceso
-                    stileAttuale = Color(0xFFFF0000)
+                    currentStyle = Color(0xFFFF0000)
                     continue // Salta la stampa del carattere '/' grafico
                 }
 
                 '&' -> {
                     // Quando incontra '&', tutto il resto della sequenza non premuta diventa Rosso Chiaro
-                    stileAttuale = Color(0xFFFF8080)
+                    currentStyle = Color(0xFFFF8080)
                     continue // Salta la stampa del carattere '&' grafico
                 }
 
             }
 
             // Applica il colore impostato in questo momento al carattere attuale
-            withStyle(style = SpanStyle(color = stileAttuale, fontWeight = FontWeight.Bold)) {
+            withStyle(style = SpanStyle(color = currentStyle, fontWeight = FontWeight.Bold)) {
                 append(char)
             }
 
-            contatoreCaratteriStampati++
+            printCharCount++
 
             // Se non è l'ultimo carattere effettivo della stringa, aggiungiamo il separatore in Nero
-            if (contatoreCaratteriStampati < stringaSenzaTag.length) {
+            if (printCharCount < cleanedSeq.length) {
                 withStyle(style = SpanStyle(color = Color.Black, fontWeight = FontWeight.Normal)) {
                     append(", ")
                 }
-
 
             }
         }
@@ -198,7 +191,7 @@ fun HistoryItem(gameNumber: Int, sequence: String) {
         //colonna per la visualizzazione della sequenza di tasti premuti
         // in modalità landscape è centrale e non occupa tutto lo schermo, così da renderla più bella livello visivo
         Column(
-            modifier = Modifier.widthIn(max = 300.dp, min = 150.dp),
+            modifier = Modifier.widthIn(max = 300.dp, min = 300.dp),
 
             horizontalAlignment = Alignment.Start
 
@@ -206,12 +199,19 @@ fun HistoryItem(gameNumber: Int, sequence: String) {
             //calcolo in base alla lunghezza della stringa i punti fatti dal giocatore
             //altro non sono che la lunghezza totale di tasti premuti -1
             // Modificato per estrarre la parte pulita indovinata dall'utente (quella prima dell'errore '/')
-            val cleanUserPart = sequence.substringBefore('/')
-            val count = if (cleanUserPart.isEmpty()) 0 else ceil(cleanUserPart.length / 3.0).toInt()
+            //da modificare in modo che l'errore sia nella parte finale, ceh se sbaglio tiene il punteggio
+            // come la lunghezza della sequenza generata prima (quella del computer)
+
+
+            val cleanUserPart = sequence.replace("/", "").replace("&", "")
+
+            //calcolo del punteggio fatto dal giocatore (prende la sequenza precedente)
+            val points = if (cleanUserPart.isEmpty()) 0 else cleanUserPart.length - 1
+
             Row {
                 //testo che visualizza il numero di tasti premuti e la sequenza di tasti premuti
                 Text(
-                    text = count.toString(),
+                    text = points.toString(),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Medium,
                     modifier= Modifier.padding(start = 20.dp)
@@ -219,6 +219,7 @@ fun HistoryItem(gameNumber: Int, sequence: String) {
                 )
 
                 Spacer(modifier = Modifier.padding(16.dp))
+
                 Text(
 
                     //testo che visualizza la sequenza di tasti premuti, con troncamento a dure righe al massimo

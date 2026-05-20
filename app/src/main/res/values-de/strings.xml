@@ -6,7 +6,7 @@
     <string name="supplang">Unterstützte Sprachen</string>
     <string name="del">Löschen</string>
     <string name="endgame">Spiel beenden</string>
-    <string name="clickedSeq">Die angeklickte Sequenz wird hier angezeigt!</string>
+    <string name="clickedSeq">Geklickte Sequenz wird hier angezeigt!</string>
     <string name="back">Zurück</string>
     <string name="games">Spiele</string>
     <string name="clickedNum">Taste gedrückt</string>
@@ -18,4 +18,6 @@
     <string name="resume">Fortsetzen</string>
     <string name="startGame">Spiel starten</string>
     <string name="points">Punkte</string>
+    <string name="point">Punkt</string>
+    <string name="level">Level</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.example.zenmprojectintermedio
 
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -80,29 +81,28 @@ fun ColorGridLan(isStarted: Boolean, activeHighlight: String, onButtonClick: (St
 @Composable
 fun Buttons(
     started: Boolean,
+    isPaused: Boolean,
+    isGameOver: Boolean,
+    isCompTurn: Boolean,
     onStartUpdate: (Boolean) -> Unit,
-    // Modificata l'azione per usare handleExit direttamente
-    onFinishAndExit: () -> Unit,
-    onResetSeq: () -> Unit
+    onPauseToggle: () -> Unit,
+    onFinishAndExit: () -> Unit
 ) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Cambiato in ExtendedFloatingActionButton per coerenza grafica
+        // Pulsante per Iniziare / Terminare il gioco
         ExtendedFloatingActionButton(
             onClick = {
                 if (!started) {
                     onStartUpdate(true)
                 } else {
-                    // Rimosso il blocco if restrittivo: ora premiamo fine partita e lasciamo che handleExit
-                    // decida se salvare l'ultimo round valido o semplicemente tornare indietro
                     onFinishAndExit()
                 }
             },
             modifier = Modifier.padding(4.dp)
         ) {
-            //cambaimento di testo per il pulsante di inizio e fine partita
             if(!started) {
                 Text(stringResource(R.string.startGame))
             }
@@ -110,13 +110,23 @@ fun Buttons(
                 Text(stringResource(R.string.endGame))
             }
         }
-        //pulsante mette il gioco in pausa
-        //la parte da finire, da fare oggi o domani al massimo
-        ExtendedFloatingActionButton(
-            onClick = { },
-            modifier = Modifier.padding(4.dp)
-        ) {
-            Text(stringResource(R.string.pause))
+
+        // Il pulsante Pausa appare SOLO se la partita è avviata E NON è finita per un errore
+        if (started && !isGameOver) {
+            // Calcoliamo se deve essere attivo logicamente
+            val isClickable = isCompTurn || isPaused
+
+            ExtendedFloatingActionButton(
+                // Se è cliccabile esegue il toggle, altrimenti la lambda è vuota e il tasto non fa nulla
+                onClick = { if (isClickable) onPauseToggle() },
+                modifier = Modifier.padding(4.dp),
+            ) {
+                if (isPaused) {
+                    Text(stringResource(R.string.resume))
+                } else {
+                    Text(stringResource(R.string.pause))
+                }
+            }
         }
     }
 }
@@ -134,6 +144,9 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     // variabile utilizzata per cambiare valore e utilizzo del pulsante "avvia partita" e "fine partita"
     var started by rememberSaveable { mutableStateOf(false) }
 
+    // Variabile di stato per capire se il gioco si trova in uno stato di pausa temporanea
+    var isPaused by rememberSaveable { mutableStateOf(false) }
+
     // Sequenza interna del computer
     var computerSeq by rememberSaveable { mutableStateOf("") }
 
@@ -144,8 +157,8 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     //altrimenti iniziava di nuovo dal punto di partenza, e non era il requisito della consegna
     var currentAnimIndex by rememberSaveable { mutableStateOf(-1) }
 
-    // Coroutine scope per gestire i ritardi durante l'interazione utente
-    //così da non passare subito al pulsante successivo ma si ha il tempo di memorizzare la sequenza
+    // CORRETTO: Coroutine scope per gestire i ritardi durante l'interazione utente
+    // così da non passare subito al pulsante successivo ma si ha il tempo di memorizzare la sequenza
     val scope = rememberCoroutineScope()
 
     // Funzione per aggiungere una mossa casuale da parte del computer, le mosse vengono prese con la funzione random
@@ -169,23 +182,25 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     }
 
     // Gestione dell'animazione del computer senza ripartire da zero alla rotazione dello schermo
-    LaunchedEffect(started, computerSeq) {
-        //solo se è iniziata la partita e la stringa del computer non è vuota
+    LaunchedEffect(started, computerSeq, isPaused) {
+        //solo se è iniziata la partita, la stringa del computer non è vuota e NON siamo in pausa
         // entr ain questo if per continuare con la sequenza
-        if (started && computerSeq.isNotEmpty()) {
+        if (started && computerSeq.isNotEmpty() && !isPaused) {
             // indici per capire a che punto è il computer con la sua sequenza
             if (currentAnimIndex == -1) {
                 currentAnimIndex = 0
-                delay(500)
+                delay(400)
             }
             // while per gestire l'animazione del computer
-            while (currentAnimIndex < computerSeq.length) {
+            while (currentAnimIndex < computerSeq.length && !isPaused) {
                 val char = computerSeq[currentAnimIndex]
                 // delay per far vedere all'utente la mossa
-                delay(250)
+                delay(200)
+                // Controllo di sicurezza se l'utente mette in pausa proprio mentre la coroutine sta aspettando
+                if (isPaused) break
                 activeHighlight = char.toString()
                 //tempo totale tra una mossa e l'altra
-                delay(500)
+                delay(400)
                 activeHighlight = ""
                 // aggiornamento indice del computer
                 currentAnimIndex++
@@ -203,6 +218,8 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
             seqGen = ""
             seqGenNoError = ""
             started = false
+            isPaused = false
+            currentAnimIndex = -1 // Resetti l'indice anche qui per sicurezza
             onBackClicked() // Torna indietro dopo aver salvato la partita terminata con successo
         }
         // di default, se la stringa è vuota, quella inserita dall'utente (ergo alla prima volta che si entra nella schermata e si preme avvio)
@@ -210,12 +227,20 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
         else onBackClicked()
     }
 
+    // Intercetta il tasto back fisico del telefono e lo costringe a usare handleExit
+    BackHandler {
+        handleExit()
+    }
+
     //questa variabile mi serve per capire l'orientamento del dispositivio
     //come visto in Orientation
     val orientation = LocalConfiguration.current.orientation
 
-    // Calcolo dinamico del reale stato del turno utente (tiene conto dello stato di avanzamento dell'animazione PC)
-    val isUserTurnNow = started && (currentAnimIndex == -1 || currentAnimIndex >= computerSeq.length)
+    // Calcolo dinamico del reale stato del turno utente (tiene conto dello stato di avanzamento dell'animazione PC e della pausa)
+    val isUserTurnNow = started && !isPaused && (currentAnimIndex == -1 || currentAnimIndex >= computerSeq.length)
+
+    // Calcolo dinamico del turno del computer (ovvero quando NON è il turno dell'utente)
+    val isComputerTurnNow = started && !isUserTurnNow
 
     //funzione di aggiornamento della stringa, che viene richiamata da ogni pulsante, non è composable dato che
     // si possono fare chiamate composable solo da funzioni composable
@@ -237,7 +262,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                 if (cleanUserSeq.last() == computerSeq[cleanUserSeq.length - 1]) {
                     if (cleanUserSeq.length == computerSeq.length) {
                         scope.launch {
-                            delay(250)
+                            delay(200)
                             generateNextMove()
                         }
                     }
@@ -282,9 +307,12 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                         )
                         Buttons(
                             started = started,
+                            isPaused = isPaused,
+                            isGameOver = (currentAnimIndex == -2),
+                            isCompTurn = isComputerTurnNow, // Passiamo lo stato del turno PC
                             onStartUpdate = { started = it },
-                            onFinishAndExit = handleExit, // Passato handleExit per il pulsante EndGame in Landscape
-                            onResetSeq = { seqGen = "" }
+                            onPauseToggle = { isPaused = !isPaused }, // Cambia lo stato logico di pausa ad ogni clic
+                            onFinishAndExit = handleExit // Passato handleExit per il pulsante EndGame in Landscape
                         )
                     }
                 }
@@ -313,9 +341,12 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                     )
                     Buttons(
                         started = started,
+                        isPaused = isPaused,
+                        isGameOver = (currentAnimIndex == -2),
+                        isCompTurn = isComputerTurnNow, // Passamo lo stato del turno PC
                         onStartUpdate = { started = it },
-                        onFinishAndExit = handleExit, // Passato handleExit per il pulsante EndGame in Portrait
-                        onResetSeq = { seqGen = "" }
+                        onPauseToggle = { isPaused = !isPaused }, // Cambia lo stato logico di pausa ad ogni clic
+                        onFinishAndExit = handleExit // Passato handleExit per il pulsante EndGame in Portrait
                     )
                 }
             }
@@ -334,7 +365,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
 }
 
 // funzione che popola i pulsanti della griglia, dato che sono 6 tutti uguali, richiamo 6 volte questa funzione invece di
-// creare 6 pulsanti che facciano la stesa cosa, così il codice risulta molto più corto
+// creare 6 pulsanti che facciano la stesa cosa, così il codice resulta molto più corto
 @Composable
 fun SimonButton(label: String, color: Color, isEnabled: Boolean, isHighlighted: Boolean, onClick: (String) -> Unit) {
     //variabili per capire se è stato premuto o no
@@ -390,20 +421,27 @@ fun seqExitHighlightedError(compseq: String, seqgen: String): String {
         }
     }
 
-    // Se il ciclo finisce e non abbiamo trovato errori espliciti, significa che l'utente ha premuto
-    // tutto giusto ma si è fermato a metà (ha cliccato End Game volontariamente)
-    if (errorIndex == -1) {
-        errorIndex = userClean.length
-    }
-
-    // Se l'utente ha sbagliato prima della fine, marchiamo l'errore con lo slash / (Rosso Acceso)
-    if (errorIndex < compseq.length) {
-        // CORRETTO: Prendiamo la lettera da compseq per evitare l'IndexOutOfBoundsException
-        exitSeq += "/" + compseq[errorIndex]
+    // Se l'utente ha commesso un errore esplicito (ha premuto un tasto sbagliato)
+    if (errorIndex != -1) {
+        // Se l'utente ha sbagliato prima della fine, marchiamo l'errore con lo slash / (Rosso Acceso)
+        // CORRETTO: Prende il carattere errato digitato dall'utente (userClean)
+        exitSeq += "/" + userClean[errorIndex]
 
         // Tutto il resto della sequenza rimasta la marchiamo con il simbolo & (Rosso Chiaro)
         if (errorIndex + 1 < compseq.length) {
             exitSeq += "&" + compseq.substring(errorIndex + 1)
+        }
+    }
+    // Se l'utente ha premuto tutto giusto ma si è fermato a metà (ha cliccato End Game volontariamente)
+    else if (userClean.length < compseq.length) {
+        val nextCorrectIndex = userClean.length
+
+        // Non ha inserito lettere sbagliate, quindi marchiamo come interruzione (/) la mossa che il PC si aspettava
+        exitSeq += "/" + compseq[nextCorrectIndex]
+
+        // Tutto il resto della sequenza rimasta la marchiamo con il simbolo & (Rosso Chiaro)
+        if (nextCorrectIndex + 1 < compseq.length) {
+            exitSeq += "&" + compseq.substring(nextCorrectIndex + 1)
         }
     }
 
