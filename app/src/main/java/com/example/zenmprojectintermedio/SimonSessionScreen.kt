@@ -36,234 +36,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-//funzione principale della schermata di gioco
-//quella che utilizza le funzioni figlie per far giocare l'utente
-@Composable
-fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> Unit) {
-
-    //questa è una sfilza di remember savable e mutable state of, in modo tale che ogni volta che una di queste
-    // si aggiornano, la schermata viene ricaricata, e tutte le altre variabili rimangono salvate dato che sono
-    // remember savable, altrimenti se fossero variabili comuni verrebbero cancellate
-
-    // Questa variabile memorizza la sequenza di lettere premute
-    var seqGen by rememberSaveable { mutableStateOf("") }
-
-    // variabile utilizzata per cambiare valore e utilizzo del pulsante "avvia partita" e "fine partita"
-    var started by rememberSaveable { mutableStateOf(false) }
-
-    // Variabile per capire se la sessione è attiva (per il testo del pulsante)
-    var isGameActive by rememberSaveable { mutableStateOf(false) }
-
-    // //stringa per la sequenza del computer
-    var computerSeq by rememberSaveable { mutableStateOf("") }
-    // variabile per il colore evidenziato scelto casualmente dal computer
-    var activeHighlight by remember { mutableStateOf("") }
-
-    // Coroutine scope per gestire i ritardi durante l'interazione utente
-    val scope = rememberCoroutineScope()
-
-
-    // Funzione per generare la mossa successiva, una stringa con i colori,
-    // poi il coputer genera un numero casuale e prende iil carattere corrispondente nella stringa
-    fun generateNextMove() {
-        val colors = "RGBYMC"
-        computerSeq += colors.random()
-    }
-
-    // funzione che rende possibile l'animazione da parte del computer, segue la sequenza delle stringhe,
-    // e utilizzo la funzione delay in mood da evidenziare per un tot di millisecondi il pulsante da schiacciare
-    LaunchedEffect(computerSeq) {
-        if (computerSeq.isNotEmpty()) {
-            started = false // Blocca l'utente mentre il PC mostra la sequenza
-            delay(600)
-            for (char in computerSeq) {
-                delay(300)
-                activeHighlight = char.toString()
-                delay(600)
-                activeHighlight = ""
-            }
-            started = true // Turno dell'utente
-        }
-    }
-
-    // funzione aggiunta in modo tale da averne una sola sia per il back che per end game
-    val handleSaveAndExit = {
-        if (seqGen.isNotEmpty()) {
-            //salva la stringa e passa alla schermata successiva (quella della lista)
-            onFinishClicked(seqGen)
-        }
-        // esce dalla schermata senza salvare la stringa, quando è vuota
-        onBackClicked()
-    }
-
-    //questa variabile mi serve per capire l'orientamento del dispositivio
-    //come visto in Orientation
-    val orientation = LocalConfiguration.current.orientation
-
-    //funzione di aggiornamento della stringa, che viene richiamata da ogni pulsante, non è composable dato che
-    // si possono fare chiamate composable solo da funzioni composable
-    //aggiunta questa funzione per evitare di scrivere 12 volte lo stesso if
-    fun updateSeqGen(buttonLabel: String) {
-        if(started) {
-            val currentInput = if (seqGen.isEmpty()) buttonLabel else "$seqGen, $buttonLabel"
-            seqGen = currentInput
-
-            val cleanUserSeq = seqGen.replace(", ", "")
-
-            // Verifica se il tasto premuto è corretto rispetto alla sequenza del PC
-            if (cleanUserSeq.last() == computerSeq[cleanUserSeq.length - 1]) {
-
-                // ho aggiunto un delay che mi permette di vedere per un attimo la sequenza di pulsanti premuta,
-                // per poi passare a quella successiva del computer, se corretta quella inserita lato utente
-                if (cleanUserSeq.length == computerSeq.length) {
-                    scope.launch{
-                        delay(300)
-                    seqGen = "" // Reset visualizzazione per il nuovo turno
-                    generateNextMove()
-                }
-                }
-            } else {
-                // se sbaglio, la schermata rimane attiva, e posso schiacciare sia back che end game
-                // per uscire e salvare quello che ho appena fatto
-                started = false
-            }
-        }
-    }
-
-    //if che mi cambia l'orientamento, purtroppo ho dovuto creare due griglie per i pulsanti, che altrimenti risultavano uguali
-    //e in modalità landscape mi sembravano brutti da vedere dei pulsanti che fossero 2x3 invece che 3x2
-    // ho mantenuto però l'ordine dei colori, sono praticamente li stessi ma girati
-    if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Pulsante per tornare alla cronologia
-            ExtendedFloatingActionButton(onClick = handleSaveAndExit,
-                modifier = Modifier.align(Alignment.TopStart).padding(top = 20.dp, start = 20.dp)
-            ) {
-                Text(text = "< "+stringResource(R.string.back))
-            }
-
-            Row(
-                modifier = Modifier.fillMaxSize().padding(32.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ColorGridLan(started, activeHighlight) { updateSeqGen(it) }
-                Row(
-                    modifier = Modifier.fillMaxSize().padding(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        TextField(
-                            placeholder = { Text(text = stringResource(R.string.clickedSeq)) },
-                            readOnly = true,
-                            //mostro la sequenza memorizzata, che viene aggiornata alla pressione dei pulsanti
-                            value = seqGen,
-                            onValueChange = { },
-                            maxLines = 5
-                        )
-                        Buttons(
-                            isGameActive = isGameActive,
-                            onStartUpdate = {
-                                isGameActive = true
-                                seqGen = ""
-                                computerSeq = ""
-                                generateNextMove()
-                            },
-                            onSaveAndExit = handleSaveAndExit
-                        )
-                    }
-                }
-            }
-        }
-    } else {
-        Box(modifier = Modifier.fillMaxSize()) {
-
-            //else per la modalità portrait dell'app
-            Column(
-                modifier = Modifier.fillMaxSize().padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-                ColorGridPor(started, activeHighlight) { updateSeqGen(it) }
-                Spacer(modifier = Modifier.height(32.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    TextField(
-                        placeholder = { Text(text = stringResource(R.string.clickedSeq)) },
-                        readOnly = true,
-                        //mostro la sequenza memorizzata, che viene aggiornata alla pressione dei pulsanti
-                        value = seqGen,
-                        onValueChange = { },
-                        shape = RoundedCornerShape(12.dp),
-                        maxLines = 5
-                    )
-                    Buttons(
-                        isGameActive = isGameActive,
-                        onStartUpdate = {
-                            isGameActive = true
-                            seqGen = ""
-                            computerSeq = ""
-                            generateNextMove()
-                        },
-                        onSaveAndExit = handleSaveAndExit
-                    )
-                }
-            }
-
-            // Pulsante per tornare alla cronologia
-            ExtendedFloatingActionButton(
-                //ora il pulsante back gestisce sia il click per tornare indietro che per finire la partita
-                //finisce la partita solo se è stata cliccata almeno una sequenza,altrimenti non salva la partita
-                onClick = handleSaveAndExit,
-                modifier = Modifier.align(Alignment.TopStart).padding(top = 20.dp, start = 20.dp)
-            ) {
-                Text(text ="< "+ stringResource(R.string.back))
-            }
-        }
-    }
-}
-
-// funzione che popola i pulsanti della griglia, dato che sono 6 tutti uguali, richiamo 6 volte questa funzione invece di
-// creare 6 pulsanti che facciano la stesa cosa, così il codice risulta molto più corto
-@Composable
-fun SimonButton(
-    // aggiunti vari boolean a questa funzione, per sapere se possono essere cliccati
-    // e per sapere se è il turno dell'utente o del computer
-    label: String,
-    color: Color,
-    isEnabled: Boolean,
-    // parametro per sapere se è stato cliccato dal computer
-    isHighlighted: Boolean = false,
-    onClick: (String) -> Unit
-) {
-    //variabili per capire se è stato premuto o no
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    // Cambia di forma se premuto, così da far vedere che è stato premuto
-    // Ora cambia forma anche se evidenziato dal computer
-    val currentShape = if ((isPressed && isEnabled) || isHighlighted) CircleShape else RoundedCornerShape(12.dp)
-
-    Button(
-        onClick = { onClick(label) },
-        //copiato il controllo dello stato come in simple BG PLayer
-        enabled = isEnabled,
-        interactionSource = interactionSource,
-        shape = currentShape,
-        modifier = Modifier.padding(4.dp).width(120.dp).height(80.dp),
-        // Parametri colore corretti per il componente Button
-        colors = ButtonDefaults.buttonColors(
-            //aggiunti i colori per quando è premibile oppure no
-            containerColor = color,
-            contentColor = Color.Black,
-            // Se il PC evidenzia il tasto, mostriamo il colore originale anche se disabled
-            disabledContainerColor = if (isHighlighted) color else Color.LightGray.copy(alpha = 0.5f),
-            disabledContentColor = if (isHighlighted) Color.Black else Color.Gray
-        )
-    ) {
-        Text(label)
-    }
-}
-
 //grligia dei pulsanti per la modalità portrait
 @Composable
 fun ColorGridPor(isStarted: Boolean, activeHighlight: String, onButtonClick: (String) -> Unit) {
@@ -307,9 +79,11 @@ fun ColorGridLan(isStarted: Boolean, activeHighlight: String, onButtonClick: (St
 //in modo analogo a quanto fatto per i pulsanti del gioco ho creato una funzione per rendere il codice più leggibile e corto
 @Composable
 fun Buttons(
-    isGameActive: Boolean, // Variabile per mantenere il testo "End Game"
-    onStartUpdate: () -> Unit,
-    onSaveAndExit: () -> Unit // Azione unificata per salvare ed uscire
+    started: Boolean,
+    onStartUpdate: (Boolean) -> Unit,
+    // Modificata l'azione per usare handleExit direttamente
+    onFinishAndExit: () -> Unit,
+    onResetSeq: () -> Unit
 ) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -318,16 +92,18 @@ fun Buttons(
         // Cambiato in ExtendedFloatingActionButton per coerenza grafica
         ExtendedFloatingActionButton(
             onClick = {
-                if (!isGameActive) {
-                    onStartUpdate()
+                if (!started) {
+                    onStartUpdate(true)
                 } else {
-                    // Se il gioco è attivo, salva ed esce dalla schermata
-                    onSaveAndExit()
+                    // Rimosso il blocco if restrittivo: ora premiamo fine partita e lasciamo che handleExit
+                    // decida se salvare l'ultimo round valido o semplicemente tornare indietro
+                    onFinishAndExit()
                 }
             },
             modifier = Modifier.padding(4.dp)
         ) {
-            if(!isGameActive) {
+            //cambaimento di testo per il pulsante di inizio e fine partita
+            if(!started) {
                 Text(stringResource(R.string.startGame))
             }
             else {
@@ -335,7 +111,7 @@ fun Buttons(
             }
         }
         //pulsante mette il gioco in pausa
-        //non ancora attivo, va pensato a come implementarlo poi
+        //la parte da finire, da fare oggi o domani al massimo
         ExtendedFloatingActionButton(
             onClick = { },
             modifier = Modifier.padding(4.dp)
@@ -343,4 +119,294 @@ fun Buttons(
             Text(stringResource(R.string.pause))
         }
     }
+}
+
+//funzione principale della schermata di gioco
+@Composable
+fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> Unit) {
+
+    // Questa variabile memorizza la sequenza di lettere premute
+    var seqGen by rememberSaveable { mutableStateOf("") }
+
+    //variabile aggiunta per l'uscita senza errori dalla schermata principale
+    var seqGenNoError by rememberSaveable { mutableStateOf("") }
+
+    // variabile utilizzata per cambiare valore e utilizzo del pulsante "avvia partita" e "fine partita"
+    var started by rememberSaveable { mutableStateOf(false) }
+
+    // Sequenza interna del computer
+    var computerSeq by rememberSaveable { mutableStateOf("") }
+
+    // Tasto attualemente illuminato dal computer
+    var activeHighlight by remember { mutableStateOf("") }
+
+    // Memorizza l'indice della letterai che il computer sta riproducendo per non resettarsi alla rotazione
+    //altrimenti iniziava di nuovo dal punto di partenza, e non era il requisito della consegna
+    var currentAnimIndex by rememberSaveable { mutableStateOf(-1) }
+
+    // Coroutine scope per gestire i ritardi durante l'interazione utente
+    //così da non passare subito al pulsante successivo ma si ha il tempo di memorizzare la sequenza
+    val scope = rememberCoroutineScope()
+
+    // Funzione per aggiungere una mossa casuale da parte del computer, le mosse vengono prese con la funzione random
+    // e fanno riferimento ad uno dei colori dei pulsanti
+    fun generateNextMove() {
+        // variabile aggiunta in modo che alla rotaazione dello schermo, quando la sequenza del computer è finita
+        // essa non riparta dall'inizio a generarsi
+        seqGenNoError = seqGen
+        currentAnimIndex = -1
+        val colors = "RGBYMC"
+        computerSeq += colors.random()
+        seqGen= ""
+    }
+
+    // Innesca la prima mossa all'avvio della partita
+    // generata casualmente partendo dalla stringa di colori sopra
+    LaunchedEffect(started) {
+        if (started && computerSeq.isEmpty()) {
+            generateNextMove()
+        }
+    }
+
+    // Gestione dell'animazione del computer senza ripartire da zero alla rotazione dello schermo
+    LaunchedEffect(started, computerSeq) {
+        //solo se è iniziata la partita e la stringa del computer non è vuota
+        // entr ain questo if per continuare con la sequenza
+        if (started && computerSeq.isNotEmpty()) {
+            // indici per capire a che punto è il computer con la sua sequenza
+            if (currentAnimIndex == -1) {
+                currentAnimIndex = 0
+                delay(500)
+            }
+            // while per gestire l'animazione del computer
+            while (currentAnimIndex < computerSeq.length) {
+                val char = computerSeq[currentAnimIndex]
+                // delay per far vedere all'utente la mossa
+                delay(250)
+                activeHighlight = char.toString()
+                //tempo totale tra una mossa e l'altra
+                delay(500)
+                activeHighlight = ""
+                // aggiornamento indice del computer
+                currentAnimIndex++
+            }
+        }
+    }
+
+    // Funzione centralizzata per gestire l'uscita salvando la partita se è in corso
+    val handleExit = {
+        // recupero l'ultima sequenza valida digitata se l'utente si trova nel mezzo dell'esposizione del PC
+        val stringToSave = if (seqGen.isNotEmpty()) seqGen else seqGenNoError
+
+        if (started && stringToSave.isNotEmpty()) {
+            onFinishClicked(seqExitHighlightedError(computerSeq, stringToSave))
+            seqGen = ""
+            seqGenNoError = ""
+            started = false
+            onBackClicked() // Torna indietro dopo aver salvato la partita terminata con successo
+        }
+        // di default, se la stringa è vuota, quella inserita dall'utente (ergo alla prima volta che si entra nella schermata e si preme avvio)
+        // esce senza salvare nulla, avviene solo se non metto input
+        else onBackClicked()
+    }
+
+    //questa variabile mi serve per capire l'orientamento del dispositivio
+    //come visto in Orientation
+    val orientation = LocalConfiguration.current.orientation
+
+    // Calcolo dinamico del reale stato del turno utente (tiene conto dello stato di avanzamento dell'animazione PC)
+    val isUserTurnNow = started && (currentAnimIndex == -1 || currentAnimIndex >= computerSeq.length)
+
+    //funzione di aggiornamento della stringa, che viene richiamata da ogni pulsante, non è composable dato che
+    // si possono fare chiamate composable solo da funzioni composable
+    //aggiunta questa funzione per evitare di scrivere 12 volte lo stesso if
+    // inoltre controlla anche la correttzza della stringa inserita dall'utente
+    fun updateSeqGen(buttonLabel: String) {
+        if(isUserTurnNow) {
+            if (seqGen.length == 0)
+                seqGen = buttonLabel
+            else
+                seqGen = seqGen + ", " + buttonLabel
+            //variabile generata per confronto con stringa del computer
+            val cleanUserSeq = seqGen.replace(", ", "")
+
+            // sincronizzo la variabile di backup a ogni tocco valido dell'utente
+            seqGenNoError = seqGen
+
+            if (computerSeq.isNotEmpty() && cleanUserSeq.length <= computerSeq.length) {
+                if (cleanUserSeq.last() == computerSeq[cleanUserSeq.length - 1]) {
+                    if (cleanUserSeq.length == computerSeq.length) {
+                        scope.launch {
+                            delay(250)
+                            generateNextMove()
+                        }
+                    }
+                } else {
+                    //meno due così la schermata si blocca e non permette più inseriemnto da parte dell'utente
+                    currentAnimIndex = -2
+                }
+            }
+        }
+    }
+
+    //if che mi cambia l'orientamento, purtroppo ho dovuto creare due griglie per i pulsanti, che altrimenti risultavano uguali
+    //e in modalità landscape mi sembravano brutti da vedere dei pulsanti che fossero 2x3 invece che 3x2
+    // ho mantenuto però l'ordine dei colori, sono praticamente li stessi ma girati
+    if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Pulsante per tornare alla cronologia
+            ExtendedFloatingActionButton(onClick = handleExit,
+                modifier = Modifier.align(Alignment.TopStart).padding(top = 20.dp, start = 20.dp)
+            ) {
+                Text(text = "< "+stringResource(R.string.back))
+            }
+
+            Row(
+                modifier = Modifier.fillMaxSize().padding(32.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ColorGridLan(isStarted = isUserTurnNow, activeHighlight = activeHighlight) { updateSeqGen(it) }
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        TextField(
+                            placeholder = { Text(text = stringResource(R.string.clickedSeq)) },
+                            readOnly = true,
+                            //mostro la sequenza memorizzata, che viene aggiornata alla pressione dei pulsanti
+                            value = seqGen,
+                            onValueChange = { },
+                            maxLines = 5
+                        )
+                        Buttons(
+                            started = started,
+                            onStartUpdate = { started = it },
+                            onFinishAndExit = handleExit, // Passato handleExit per il pulsante EndGame in Landscape
+                            onResetSeq = { seqGen = "" }
+                        )
+                    }
+                }
+            }
+        }
+    } else {
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            //else per la modalità portrait dell'app
+            Column(
+                modifier = Modifier.fillMaxSize().padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                ColorGridPor(isStarted = isUserTurnNow, activeHighlight = activeHighlight) { updateSeqGen(it) }
+                Spacer(modifier = Modifier.height(32.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    TextField(
+                        placeholder = { Text(text = stringResource(R.string.clickedSeq)) },
+                        readOnly = true,
+                        //mostro la sequenza memorizzata, che viene aggiornata alla pressione dei pulsanti
+                        value = seqGen,
+                        onValueChange = { },
+                        shape = RoundedCornerShape(12.dp),
+                        maxLines = 5
+                    )
+                    Buttons(
+                        started = started,
+                        onStartUpdate = { started = it },
+                        onFinishAndExit = handleExit, // Passato handleExit per il pulsante EndGame in Portrait
+                        onResetSeq = { seqGen = "" }
+                    )
+                }
+            }
+
+            // Pulsante per tornare alla cronologia
+            //ora il pulsante back gestisce sia il click per tornare indietro che per finire la partita
+            //finisce la partita solo se è stata cliccata almeno una sequenza,altrimenti non salva la partita
+            ExtendedFloatingActionButton(
+                onClick = { handleExit() },
+                modifier = Modifier.align(Alignment.TopStart).padding(top = 20.dp, start = 20.dp)
+            ) {
+                Text(text ="< "+ stringResource(R.string.back))
+            }
+        }
+    }
+}
+
+// funzione che popola i pulsanti della griglia, dato che sono 6 tutti uguali, richiamo 6 volte questa funzione invece di
+// creare 6 pulsanti che facciano la stesa cosa, così il codice risulta molto più corto
+@Composable
+fun SimonButton(label: String, color: Color, isEnabled: Boolean, isHighlighted: Boolean, onClick: (String) -> Unit) {
+    //variabili per capire se è stato premuto o no
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    // Cambia di forma se premuto, così da far vedere che è stato premuto
+    val currentShape = if ((isPressed && isEnabled) || isHighlighted) CircleShape else RoundedCornerShape(12.dp)
+
+    Button(
+        onClick = { onClick(label) },
+        //copiato il controllo dello stato come in simple BG PLayer
+        enabled = isEnabled,
+        interactionSource = interactionSource,
+        shape = currentShape,
+        modifier = Modifier.padding(4.dp).width(120.dp).height(80.dp),
+        // Parametri colore corretti per il componente Button
+        colors = ButtonDefaults.buttonColors(
+            //aggiunti i colori per quando è premibile oppure no
+            containerColor = color,
+            contentColor = Color.Black,
+            disabledContainerColor = if (isHighlighted) color else Color.LightGray.copy(alpha = 0.5f),
+            disabledContentColor = if (isHighlighted) Color.Black else Color.Gray
+        )
+    ) {
+        Text(label)
+    }
+}
+
+//funzione per la visualizzazione corretta dell'uscita, se sbagliato il resto della sequenza è in rosso chiaro, mentre l'errore in rosso acceso
+fun seqExitHighlightedError(compseq: String, seqgen: String): String {
+
+    //inserire uno slash / e un & per cambiare prima da rosso vivo e poi da rosso un po' più chiaro
+    //così da avere sequenza dell'errore e il resto della sequenza che non è stata premuta ma bisognava premere, inoltre va salvato il punteggio
+    //che a dire a verità è sicuramente computerSeq.length-1 (prendo la stringa più lunga messa prima)
+
+    //stringa computer, passata, poi devo aggiornare la stringa, quindi chiamo sta funzione da quello che voglio passare alla scheramta successiva
+    //poi da qui handle exit e siamo a posto
+
+    //stringa inserita pulita del resto dei caratteri (spazie e virgole)
+    val userClean = seqgen.replace(", ", "")
+    var exitSeq = ""
+    var errorIndex = -1
+
+    // 1. Aggiungiamo i caratteri che l'utente ha premuto correttamente (in Nero)
+    // Troviamo anche il punto preciso in cui le due stringhe si separano (l'errore)
+    for (i in userClean.indices) {
+        if (i < compseq.length && userClean[i] == compseq[i]) {
+            exitSeq += userClean[i]
+        } else {
+            errorIndex = i
+            break
+        }
+    }
+
+    // Se il ciclo finisce e non abbiamo trovato errori espliciti, significa che l'utente ha premuto
+    // tutto giusto ma si è fermato a metà (ha cliccato End Game volontariamente)
+    if (errorIndex == -1) {
+        errorIndex = userClean.length
+    }
+
+    // Se l'utente ha sbagliato prima della fine, marchiamo l'errore con lo slash / (Rosso Acceso)
+    if (errorIndex < compseq.length) {
+        // CORRETTO: Prendiamo la lettera da compseq per evitare l'IndexOutOfBoundsException
+        exitSeq += "/" + compseq[errorIndex]
+
+        // Tutto il resto della sequenza rimasta la marchiamo con il simbolo & (Rosso Chiaro)
+        if (errorIndex + 1 < compseq.length) {
+            exitSeq += "&" + compseq.substring(errorIndex + 1)
+        }
+    }
+
+    // ritorno della stringa con i tag speciali per cambiare colore, cambio vhe verrà fatto nella schermata della lazy column
+    return exitSeq
 }
