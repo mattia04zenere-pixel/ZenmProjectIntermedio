@@ -1,5 +1,6 @@
 package com.example.zenmprojectintermedio
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -77,9 +78,9 @@ fun SimonGameDetailsScreen(
 
         //numero di pulsanti premuti senza errori visualizzato come primo elemento
         // Modificato per calcolare i punti reali basandosi solo su ciò che l'utente ha indovinato (prima del tag '/')
-        val cleanUserPart = sequence.replace("/", "").replace("&", "")
+        val cleanedUserPart = sequence.replace("/", "").replace("&", "")
         //calcolo del punteggio fatto dal giocatore (prende la sequenza precedente)
-        val points = if (cleanUserPart.isEmpty()) 0 else cleanUserPart.length - 1
+        val points = if (cleanedUserPart.isEmpty()) 0 else cleanedUserPart.length - 1
 
         // Gestione grammaticale corretta per Punti/Punto
         val pointsText = if (points == 1) {
@@ -95,21 +96,21 @@ fun SimonGameDetailsScreen(
         )
 
         // Il conteggio totale dei clic visibili (inclusi errore e rimanenti del PC)
-        val count = cleanUserPart.length
+        val clickCount = cleanedUserPart.length
 
         //vecchia stringa rimossa, ora dice il livello del gioco cui si è arrivati
         // livello 1 è il primo, si sale a mano a mano che le stringhe diventano più lunghe
-        val textCount = stringResource(R.string.level)+" " + count.toString()
+        val levelText = stringResource(R.string.level) + " " + clickCount.toString()
 
 
-      /*      if (count == 1) {
-            "$count " + stringResource(R.string.clickedNum)
-        } else {
-            "$count " + stringResource(R.string.clickedNums)
-        }
-*/
+        /* if (clickCount == 1) {
+              "$clickCount " + stringResource(R.string.clickedNum)
+          } else {
+              "$clickCount " + stringResource(R.string.clickedNums)
+          }
+  */
         Text(
-            text = textCount,
+            text = levelText,
             fontSize = 24.sp,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -119,7 +120,7 @@ fun SimonGameDetailsScreen(
 
         // Sequenza completa visualizzata in grande e senza troncamenti
         Text(
-            // Modificato per passare la stringa elaborata con i 3 colori e separata da virgole
+            // Modificato per passare la stringa distribuita con i 3 colori e separata da virgole
             text = decodeStringToColorsDetails(sequence),
             fontSize = 32.sp,
             lineHeight = 40.sp,

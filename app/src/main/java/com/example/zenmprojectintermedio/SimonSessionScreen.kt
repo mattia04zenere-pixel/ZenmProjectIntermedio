@@ -1,7 +1,11 @@
 package com.example.zenmprojectintermedio
 
 import android.content.res.Configuration
+import android.media.AudioFormat
+import android.media.AudioManager
+import android.media.AudioTrack
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -103,6 +108,7 @@ fun Buttons(
             },
             modifier = Modifier.padding(4.dp)
         ) {
+            //condizione visualizzazione del pulsante di avvia partita o termina partita
             if(!started) {
                 Text(stringResource(R.string.startGame))
             }
@@ -111,7 +117,7 @@ fun Buttons(
             }
         }
 
-        // Il pulsante Pausa appare SOLO se la partita è avviata E NON è finita per un errore
+        // Il pulsante Pausa appare solo se la partita è avviata e non è finita per un errore
         if (started && !isGameOver) {
             // Calcoliamo se deve essere attivo logicamente
             val isClickable = isCompTurn || isPaused
@@ -121,6 +127,7 @@ fun Buttons(
                 onClick = { if (isClickable) onPauseToggle() },
                 modifier = Modifier.padding(4.dp),
             ) {
+                //condizione per il pulsante di pausa o riprendi (visibile solo se la partita è iniziata)
                 if (isPaused) {
                     Text(stringResource(R.string.resume))
                 } else {
@@ -136,10 +143,10 @@ fun Buttons(
 fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> Unit) {
 
     // Questa variabile memorizza la sequenza di lettere premute
-    var seqGen by rememberSaveable { mutableStateOf("") }
+    var userSequence by rememberSaveable { mutableStateOf("") }
 
     //variabile aggiunta per l'uscita senza errori dalla schermata principale
-    var seqGenNoError by rememberSaveable { mutableStateOf("") }
+    var userSequenceBackup by rememberSaveable { mutableStateOf("") }
 
     // variabile utilizzata per cambiare valore e utilizzo del pulsante "avvia partita" e "fine partita"
     var started by rememberSaveable { mutableStateOf(false) }
@@ -157,20 +164,91 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     //altrimenti iniziava di nuovo dal punto di partenza, e non era il requisito della consegna
     var currentAnimIndex by rememberSaveable { mutableStateOf(-1) }
 
-    // CORRETTO: Coroutine scope per gestire i ritardi durante l'interazione utente
+    //variabile per il feeedback sull'errore di pressione da parte dell'utente
+    var isErrorActive by remember { mutableStateOf(false) }
+
+    // Coroutine scope per gestire i ritardi durante l'interazione utente
     // così da non passare subito al pulsante successivo ma si ha il tempo di memorizzare la sequenza
     val scope = rememberCoroutineScope()
+
+    //variabile per le frequenze dei pulsanti
+    val frequencies = remember {
+        mapOf(
+            //i pulsanti emmettono note diverese, ognuno sempre la stessa ma diverse tra loro
+            "R" to 261.63, // Do
+            "G" to 293.66, // Re
+            "B" to 329.63, // Mi
+            "Y" to 349.23, // Fa
+            "M" to 392.00, // Sol
+            "C" to 440.00  // La
+        )
+    }
+
+
+    //funzione per il suono associato al pulsante
+    fun playPureTone(label: String) {
+        val frequency = frequencies[label] ?: return
+        scope.launch(Dispatchers.Default) {
+            val durationMs = 300
+            val sampleRate = 44100
+            val numSamples = (durationMs * sampleRate) / 1000
+            val generatedSnd = ByteArray(2 * numSamples)
+
+            // Definiamo la durata in campioni della sfumatura iniziale (Attack) e finale (Release)
+            val attackSamples = (20 * sampleRate) / 1000  // 20 millisecondi di dissolvenza in entrata
+            val releaseSamples = (40 * sampleRate) / 1000 // 40 millisecondi di dissolvenza in uscita
+
+            for (i in 0 until numSamples) {
+                val angle = 2.0 * Math.PI * i / (sampleRate / frequency)
+
+                // Calcoliamo il fattore di volume dinamico per eliminare i colpi di inizio/fine
+                val amplitudeFactor = when {
+                    i < attackSamples -> {
+                        // Sfumatura lineare in entrata (da 0 a 1)
+                        i.toDouble() / attackSamples
+                    }
+                    i > (numSamples - releaseSamples) -> {
+                        // Sfumatura lineare in uscita (da 1 a 0)
+                        (numSamples - i).toDouble() / releaseSamples
+                    }
+                    else -> 1.0 // Volume pieno al centro del suono
+                }
+
+                // Generiamo il campione moltiplicandolo per il fattore di volume dinamico
+                // altrimenti si sentiva una specie di scoppio ad inizio e fine del suono
+                val sample = (Math.sin(angle) * 32767 * amplitudeFactor).toInt()
+
+                // I due byte rappresentano il campione a 16-bit
+                generatedSnd[2 * i] = (sample and 0x00ff).toByte()
+                generatedSnd[2 * i + 1] = ((sample and 0xff00) shr 8).toByte()
+            }
+
+            // variabile di audio per i pulsanti
+            val audioTrack = AudioTrack(
+                AudioManager.STREAM_MUSIC,
+                sampleRate,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                generatedSnd.size,
+                AudioTrack.MODE_STATIC
+            )
+            audioTrack.write(generatedSnd, 0, generatedSnd.size)
+            audioTrack.play()
+            delay(durationMs.toLong())
+            audioTrack.release()
+        }
+    }
 
     // Funzione per aggiungere una mossa casuale da parte del computer, le mosse vengono prese con la funzione random
     // e fanno riferimento ad uno dei colori dei pulsanti
     fun generateNextMove() {
         // variabile aggiunta in modo che alla rotaazione dello schermo, quando la sequenza del computer è finita
         // essa non riparta dall'inizio a generarsi
-        seqGenNoError = seqGen
+        userSequenceBackup = userSequence
         currentAnimIndex = -1
         val colors = "RGBYMC"
         computerSeq += colors.random()
-        seqGen= ""
+        userSequence = ""
     }
 
     // Innesca la prima mossa all'avvio della partita
@@ -199,6 +277,10 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                 // Controllo di sicurezza se l'utente mette in pausa proprio mentre la coroutine sta aspettando
                 if (isPaused) break
                 activeHighlight = char.toString()
+
+                // --- NUOVO: Riproduce il suono associato alla nota che il computer sta mostrando ---
+                playPureTone(char.toString())
+
                 //tempo totale tra una mossa e l'altra
                 delay(400)
                 activeHighlight = ""
@@ -211,12 +293,19 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     // Funzione centralizzata per gestire l'uscita salvando la partita se è in corso
     val handleExit = {
         // recupero l'ultima sequenza valida digitata se l'utente si trova nel mezzo dell'esposizione del PC
-        val stringToSave = if (seqGen.isNotEmpty()) seqGen else seqGenNoError
+        var stringToSave = if (userSequence.isNotEmpty()) userSequence else userSequenceBackup
 
-        if (started && stringToSave.isNotEmpty()) {
+        // --- MODIFICATO: Se la partita è avviata, ma l'utente esce senza aver mai digitato nulla (anche alla prima mossa),
+        // forziamo la stringa a essere registrata come un errore immediato sulla prima sequenza del computer.
+        if (started && stringToSave.isEmpty() && computerSeq.isNotEmpty()) {
+            stringToSave = "" // Rimane vuota in modo che seqExitHighlightedError veda l'interruzione fin dall'inizio
+        }
+
+        // Ora salviamo sia se c'è del testo, sia se l'utente esce intenzionalmente alla prima mossa senza input
+        if (started && (stringToSave.isNotEmpty() || computerSeq.isNotEmpty())) {
             onFinishClicked(seqExitHighlightedError(computerSeq, stringToSave))
-            seqGen = ""
-            seqGenNoError = ""
+            userSequence = ""
+            userSequenceBackup = ""
             started = false
             isPaused = false
             currentAnimIndex = -1 // Resetti l'indice anche qui per sicurezza
@@ -233,7 +322,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     }
 
     //questa variabile mi serve per capire l'orientamento del dispositivio
-    //come visto in Orientation
+    //como visto in Orientation
     val orientation = LocalConfiguration.current.orientation
 
     // Calcolo dinamico del reale stato del turno utente (tiene conto dello stato di avanzamento dell'animazione PC e della pausa)
@@ -248,16 +337,20 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     // inoltre controlla anche la correttzza della stringa inserita dall'utente
     fun updateSeqGen(buttonLabel: String) {
         if(isUserTurnNow) {
-            if (seqGen.length == 0)
-                seqGen = buttonLabel
+            // Riproduce il tono acustico corrispondente al pulsante premuto fisicamente dall'utente
+            playPureTone(buttonLabel)
+
+            if (userSequence.length == 0)
+                userSequence = buttonLabel
             else
-                seqGen = seqGen + ", " + buttonLabel
+                userSequence = userSequence + ", " + buttonLabel
             //variabile generata per confronto con stringa del computer
-            val cleanUserSeq = seqGen.replace(", ", "")
+            val cleanUserSeq = userSequence.replace(", ", "")
 
             // sincronizzo la variabile di backup a ogni tocco valido dell'utente
-            seqGenNoError = seqGen
+            userSequenceBackup = userSequence
 
+            // funzione per anare avanti con la sequenza, che controlla anche la correttezza
             if (computerSeq.isNotEmpty() && cleanUserSeq.length <= computerSeq.length) {
                 if (cleanUserSeq.last() == computerSeq[cleanUserSeq.length - 1]) {
                     if (cleanUserSeq.length == computerSeq.length) {
@@ -267,8 +360,16 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                         }
                     }
                 } else {
+                    // condizione per l'errore di input da parte dell'utente
+                    // Diventa rosso all'istante, ma dopo 300ms torna normale fissa
+                    isErrorActive = true
                     //meno due così la schermata si blocca e non permette più inseriemnto da parte dell'utente
                     currentAnimIndex = -2
+
+                    scope.launch {
+                        delay(300) // Durata del flash rosso sullo schermo
+                        isErrorActive = false // Ritorna subito allo sfondo trasparente/normale
+                    }
                 }
             }
         }
@@ -279,7 +380,8 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     // ho mantenuto però l'ordine dei colori, sono praticamente li stessi ma girati
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        // --- MODIFICATO: Lo sfondo diventa rosso se l'utente ha sbagliato ---
+        Box(modifier = Modifier.fillMaxSize().background(if (isErrorActive) Color(0x44FF0000) else Color.Transparent)) {
             // Pulsante per tornare alla cronologia
             ExtendedFloatingActionButton(onClick = handleExit,
                 modifier = Modifier.align(Alignment.TopStart).padding(top = 20.dp, start = 20.dp)
@@ -301,7 +403,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                             placeholder = { Text(text = stringResource(R.string.clickedSeq)) },
                             readOnly = true,
                             //mostro la sequenza memorizzata, che viene aggiornata alla pressione dei pulsanti
-                            value = seqGen,
+                            value = userSequence,
                             onValueChange = { },
                             maxLines = 5
                         )
@@ -319,7 +421,8 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
             }
         }
     } else {
-        Box(modifier = Modifier.fillMaxSize()) {
+        // Lo sfondo diventa rosso se l'utente ha sbagliato
+        Box(modifier = Modifier.fillMaxSize().background(if (isErrorActive) Color(0x44FF0000) else Color.Transparent)) {
 
             //else per la modalità portrait dell'app
             Column(
@@ -334,7 +437,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                         placeholder = { Text(text = stringResource(R.string.clickedSeq)) },
                         readOnly = true,
                         //mostro la sequenza memorizzata, che viene aggiornata alla pressione dei pulsanti
-                        value = seqGen,
+                        value = userSequence,
                         onValueChange = { },
                         shape = RoundedCornerShape(12.dp),
                         maxLines = 5

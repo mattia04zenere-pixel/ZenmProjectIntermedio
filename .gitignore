@@ -1,16 +1,19 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.idea
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+gitignore
+# File di build generati
+/build/
+app/build/
+.gradle/
+.kotlin/
+
+# Impostazioni locali e personali
 local.properties
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# File di sistema e log
+.DS_Store
+/captures
+.externalNativeBuild/
+.cxx/
