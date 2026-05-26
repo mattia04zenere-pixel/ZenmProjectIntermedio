@@ -20,13 +20,15 @@ Se non ci sono partite giocate visualizza un messaggio inerente
 - **database SQLite**
 
 ## Info utili
-ho rinominato le schermate: Schermata 1: SimonSessionScreen, schermata 2: SimonHystoryScreen. Inoltre ho agginto una schermata di benvenuto, visualizzata all'apertura dell'app
-la schermata di benvenuto è stata rimossa, per adattarsi meglio alle specifiche di progetto. 
-per salvare i dati delle partite ora invece di Shared Preferences utilizzo un database Sqlite, così da adattarsi alle specifiche, non ho utilizzato room dato che dava problemi all'avvio dell'app (crashava istantaneamente)
+ho rinominato le schermate: Schermata 1: SimonSessionScreen, schermata 2: SimonHystoryScreen. Inoltre ho agginto una schermata di benvenuto, visualizzata all'apertura dell'app.
+La schermata di benvenuto è stata rimossa, per adattarsi meglio alle specifiche di progetto. 
+Per salvare i dati delle partite ora invece di Shared Preferences utilizzo un database Sqlite, così da adattarsi alle specifiche, non ho utilizzato room dato che dava problemi all'avvio dell'app (crashava istantaneamente)
 per il progetto io ho utilizzato un telefono (xiaomi redmi note 9s) con Android 12 e API 31, ho provato anche su un altro telefono (xiaomi 12) con Android 15 e API 35, e l'app funzionava correttamente in entrambi i casi
 
-il codice è propriamente commentato e spiegato, sopratutto per quanto riguarda il componimento dell'app nelle modalità landscape e portrai e
+il codice è propriamente commentato e spiegato, sopratutto per quanto riguarda il componimento dell'app nelle modalità landscape e portrait e
 per spiegare a che cosa servono molte funzioni presenti all'interno
+
+nella schermata di gioco sono presenti tre pulsanti, uno è quello per tornare indietro (in alto a sinistra), poi ho il pulsante per iniziare la partita, che cambia nel pulsante termina partita, e fa inoltre apparire il pulsante pausa/riprendi, che rimane attivo fino a quando non si esce dalla scheramta di gioco.
 
 corretto inoltre il problema di salvataggio delle partite vuote, che aveva specificato nella consegna intermedia (e che avevo saltato in tronco leggendola)
 le sequenze se sbagliate vengono visualizzate in tre colori differenti, rosso acceso per indicare l'errore, rosso più chiaro per dire il resto della sequenza che sarebbe dovuta essere andata schiacciata
