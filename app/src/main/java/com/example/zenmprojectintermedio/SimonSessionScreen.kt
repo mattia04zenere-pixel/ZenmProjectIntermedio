@@ -290,39 +290,8 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
         }
     }
 
-    // Funzione centralizzata per gestire l'uscita salvando la partita se è in corso
-    val handleExit = {
-        // recupero l'ultima sequenza valida digitata se l'utente si trova nel mezzo dell'esposizione del PC
-        var stringToSave = if (userSequence.isNotEmpty()) userSequence else userSequenceBackup
-
-        // --- MODIFICATO: Se la partita è avviata, ma l'utente esce senza aver mai digitato nulla (anche alla prima mossa),
-        // forziamo la stringa a essere registrata come un errore immediato sulla prima sequenza del computer.
-        if (started && stringToSave.isEmpty() && computerSeq.isNotEmpty()) {
-            stringToSave = "" // Rimane vuota in modo che seqExitHighlightedError veda l'interruzione fin dall'inizio
-        }
-
-        // Ora salviamo sia se c'è del testo, sia se l'utente esce intenzionalmente alla prima mossa senza input
-        if (started && (stringToSave.isNotEmpty() || computerSeq.isNotEmpty())) {
-            onFinishClicked(seqExitHighlightedError(computerSeq, stringToSave))
-            userSequence = ""
-            userSequenceBackup = ""
-            started = false
-            isPaused = false
-            currentAnimIndex = -1 // Resetti l'indice anche qui per sicurezza
-            onBackClicked() // Torna indietro dopo aver salvato la partita terminata con successo
-        }
-        // di default, se la stringa è vuota, quella inserita dall'utente (ergo alla prima volta che si entra nella schermata e si preme avvio)
-        // esce senza salvare nulla, avviene solo se non metto input
-        else onBackClicked()
-    }
-
-    // Intercetta il tasto back fisico del telefono e lo costringe a usare handleExit
-    BackHandler {
-        handleExit()
-    }
-
-    //questa variabile mi serve per capire l'orientamento del dispositivio
-    //como visto in Orientation
+    // questa variabile mi serve per capire l'orientamento del dispositivio
+    // como visto in Orientation
     val orientation = LocalConfiguration.current.orientation
 
     // Calcolo dinamico del reale stato del turno utente (tiene conto dello stato di avanzamento dell'animazione PC e della pausa)
@@ -330,6 +299,48 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
 
     // Calcolo dinamico del turno del computer (ovvero quando NON è il turno dell'utente)
     val isComputerTurnNow = started && !isUserTurnNow
+
+    // Funzione centralizzata per gestire l'uscita salvando la partita se è in corso
+    val handleExit = {
+        // recupero l'ultima sequenza valida digitata se l'utente si trova nel mezzo dell'esposizione del PC
+        var stringToSave = if (userSequence.isNotEmpty()) userSequence else userSequenceBackup
+
+        //se si esce dalla schermata senza aver cliccato nulla lato utente, il gioco uscirà senza salvare al partita, questo avviene solo se il pc sta presentando, altrimenti la partita salva l'errore alla prima lettera
+        //
+        if (started && computerSeq.length == 1 && isComputerTurnNow) {
+            userSequence = ""
+            userSequenceBackup = ""
+            started = false
+            isPaused = false
+            currentAnimIndex = -1
+            onBackClicked()
+        } else {
+            // --- MODIFICATO: Se la partita è avviata, ma l'utente esce senza aver mai digitato nulla (anche alla prima mossa),
+            // forziamo la stringa a essere registrata come un errore immediato sulla prima sequenza del computer.
+            if (started && stringToSave.isEmpty() && computerSeq.isNotEmpty()) {
+                stringToSave = "" // Rimane vuota in modo che seqExitHighlightedError veda l'interruzione fin dall'inizio
+            }
+
+            // Ora salviamo sia se c'è del testo, sia se l'utente esce intenzionalmente alla prima mossa senza input
+            if (started && (stringToSave.isNotEmpty() || computerSeq.isNotEmpty())) {
+                onFinishClicked(seqExitHighlightedError(computerSeq, stringToSave))
+                userSequence = ""
+                userSequenceBackup = ""
+                started = false
+                isPaused = false
+                currentAnimIndex = -1 // Resetti l'indice anche qui per sicurezza
+                onBackClicked() // Torna indietro dopo aver salvato la partita terminata con successo
+            }
+            // di default, se la stringa è vuota, quella inserita dall'utente (ergo alla prima volta che si entra nella schermata e si preme avvio)
+            // esce senza salvare nulla, avviene solo se non metto input
+            else onBackClicked()
+        }
+    }
+
+    // Intercetta il tasto back fisico del telefono e lo costringe a usare handleExit
+    BackHandler {
+        handleExit()
+    }
 
     //funzione di aggiornamento della stringa, che viene richiamata da ogni pulsante, non è composable dato che
     // si possono fare chiamate composable solo da funzioni composable
@@ -380,7 +391,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     // ho mantenuto però l'ordine dei colori, sono praticamente li stessi ma girati
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
 
-        // --- MODIFICATO: Lo sfondo diventa rosso se l'utente ha sbagliato ---
+        //Lo sfondo diventa rosso se l'utente ha sbagliato, così c'è un feedback visivo sull'errore
         Box(modifier = Modifier.fillMaxSize().background(if (isErrorActive) Color(0x44FF0000) else Color.Transparent)) {
             // Pulsante per tornare alla cronologia
             ExtendedFloatingActionButton(onClick = handleExit,
