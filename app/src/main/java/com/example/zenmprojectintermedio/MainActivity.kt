@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
 //classe principale del progetto Simon
 class MainActivity : ComponentActivity() {
 
-    // Otteniamo l'istanza del Database SQLite Nativo
+    // ottengo la lista delle partite dal Database SQLite
     private val database by lazy { SimonSqliteDatabase(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             val coroutineScope = rememberCoroutineScope()
 
-            // Creiamo una lista mutabile inizialmente vuota per garantire un avvio istantaneo e leggero
+            // creazione della lista di partite giocate mutabile inizialmente vuota
             val historyList = rememberSaveable(
                 saver = listSaver(
                     save = { it.toList() },
@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
                 )
             ) { mutableStateListOf<String>() }
 
-            // Carichiamo i dati dal Database in background tramite Coroutine IO non appena lo schermo si avvia, evitando blocchi e crash
+            // carichiamo i dati dal Database in background tramite Coroutine IO non appena lo schermo si avvia, evitando blocchi e crash
             LaunchedEffect(Unit) {
                 if (historyList.isEmpty()) {
                     val savedData = withContext(Dispatchers.IO) {
@@ -55,15 +55,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            // Variabile per tenere traccia dell'indice dell'elemento selezionato nella lista
+            // variabile per tenere traccia dell'indice dell'elemento selezionato nella lista
             val selectedIndex = rememberSaveable { mutableStateOf(-1) }
 
-            //solita organizzazione delle schermata per la navigazione interna
+            //vsolita organizzazione delle schermata per la navigazione interna
             ZenmProjectIntermedioTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        // Modificato per partire direttamente dalla schermata history (mappata su finish/{seqGen})
+                        // modificato per partire direttamente dalla schermata history (mappata su finish/{seqGen})
                         startDestination = "finish/view",
                         modifier = Modifier.padding(innerPadding)
                     ) {
@@ -72,18 +72,33 @@ class MainActivity : ComponentActivity() {
                         composable("game") {
                             SimonSessionScreen(
                                 onFinishClicked = { seq ->
-                                    //aggiungo la sequenza appena premuta alla lista di sequenze
+                                    // aggiungo la sequenza appena premuta alla lista di sequenze
                                     if (seq.isNotEmpty()) {
                                         historyList.add(seq)
 
-                                        // Salvataggio asincrono nel database nativo su thread IO dedicato
+                                        // salvataggio asincrono nel database su thread IO dedicato
+                                        // usiamo il coroutineScope della MainActivity così siamo sicuri che sopravviva alla navigazione
                                         coroutineScope.launch(Dispatchers.IO) {
                                             database.insertGame(seq)
                                         }
+
+                                        // se la partita è salvata con una sequenza reale, andiamo alla schermata dei risultati specifici
+                                        navController.navigate("finish/${Uri.encode(seq)}") {
+                                            popUpTo("game") { inclusive = true } // Pulisce lo stack per evitare loop con il tasto back
+                                        }
+                                    } else {
+                                        // se la sequenza è vuota (es. uscita immediata alla prima mossa), torniamo semplicemente alla lista generale
+                                        navController.navigate("finish/view") {
+                                            popUpTo("game") { inclusive = true }
+                                        }
                                     }
-                                    navController.navigate("finish/${Uri.encode(seq)}")
                                 },
-                                onBackClicked = { navController.navigate("finish/view") }
+                                onBackClicked = {
+                                    // gestisce il click sul pulsante grafico di uscita quando non c'è una partita da salvare
+                                    navController.navigate("finish/view") {
+                                        popUpTo("game") { inclusive = true }
+                                    }
+                                }
                             )
                         }
 
@@ -93,7 +108,7 @@ class MainActivity : ComponentActivity() {
                                 onBackClicked = { navController.navigate("game") },
                                 historyList = historyList,
                                 onItemClicked = { index ->
-                                    // Salviamo l'indice selezionato e navighiamo ai dettagli
+                                    // salvataggio dell'indice selezionato e navighiamo ai dettagli
                                     selectedIndex.value = index
                                     navController.navigate("details")
                                 }
@@ -101,12 +116,14 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable("details") {
-                            // Visualizziamo la schermata dei dettagli usando l'indice salvato nel rememberSaveable
-                            val index = selectedIndex.value
-                            if (index != -1 && index < historyList.size) {
+                            // visualizzazione della schermata dei dettagli usando l'indice salvato nel rememberSaveable
+                            if (selectedIndex.value != -1 && selectedIndex.value < historyList.size) {
                                 SimonGameDetailsScreen(
-                                    sequence = historyList[index],
-                                    onBackClicked = { navController.popBackStack() }
+                                    sequence = historyList[selectedIndex.value],
+                                    onBackClicked = {
+                                        // ritorno dallla schermata di dettaglio
+                                        navController.popBackStack()
+                                    }
                                 )
                             }
                         }

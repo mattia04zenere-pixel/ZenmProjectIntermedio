@@ -98,6 +98,7 @@ fun Buttons(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Pulsante per Iniziare / Terminare il gioco
+        //rimane lo stesso, ma cambia il testo al suo interno
         ExtendedFloatingActionButton(
             onClick = {
                 if (!started) {
@@ -118,8 +119,10 @@ fun Buttons(
         }
 
         // Il pulsante Pausa appare solo se la partita è avviata e non è finita per un errore
+        //altrimenti rimane nascosto, dato che è un floating button, non si può disattivare come i button normali
+        // infatti quelli della griglia diventano solo grigi ma rimangono visibili
         if (started && !isGameOver) {
-            // Calcoliamo se deve essere attivo logicamente
+            // condizione per vedere se il pulsante deve essere attivo o no
             val isClickable = isCompTurn || isPaused
 
             ExtendedFloatingActionButton(
@@ -146,18 +149,22 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     var userSequence by rememberSaveable { mutableStateOf("") }
 
     //variabile aggiunta per l'uscita senza errori dalla schermata principale
+    // è una stringa che contiene in pratica il backup della sequenza fino ad ora premuta, utilizzata all'uscita
+    // per rendere visibile il resto della sequenza, tipo se il totale è lungo 10 ma sbaglio alla terza lettera
     var userSequenceBackup by rememberSaveable { mutableStateOf("") }
 
     // variabile utilizzata per cambiare valore e utilizzo del pulsante "avvia partita" e "fine partita"
+    // ergo è un pulsannte per la condizione di prima
     var started by rememberSaveable { mutableStateOf(false) }
 
     // Variabile di stato per capire se il gioco si trova in uno stato di pausa temporanea
+    // mette in pausa la sequenza del computer
     var isPaused by rememberSaveable { mutableStateOf(false) }
 
-    // Sequenza interna del computer
+    // Sequenza interna del computer, stringa che fa illuminare i tasti
     var computerSeq by rememberSaveable { mutableStateOf("") }
 
-    // Tasto attualemente illuminato dal computer
+    // Tasto attualemente illuminato dal computer , aggiunta per fare un po' di ordine, utile all'interno della funzione apposita
     var activeHighlight by remember { mutableStateOf("") }
 
     // Memorizza l'indice della letterai che il computer sta riproducendo per non resettarsi alla rotazione
@@ -167,11 +174,12 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     //variabile per il feeedback sull'errore di pressione da parte dell'utente
     var isErrorActive by remember { mutableStateOf(false) }
 
-    // Coroutine scope per gestire i ritardi durante l'interazione utente
+    // Coroutine scope per gestire i ritardi durante l'interazione utente (delay)
     // così da non passare subito al pulsante successivo ma si ha il tempo di memorizzare la sequenza
     val scope = rememberCoroutineScope()
 
-    //variabile per le frequenze dei pulsanti
+    //variabile per le frequenze dei pulsanti, così ognuno fa un suono diverso
+    // anche se il suono non si capisce molto la differenza
     val frequencies = remember {
         mapOf(
             //i pulsanti emmettono note diverese, ognuno sempre la stessa ma diverse tra loro
@@ -185,7 +193,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     }
 
 
-    //funzione per il suono associato al pulsante
+    //funzione per il suono associato al pulsante, diverso per ognuno, e in base al pulsante fa un suono diverso
     fun playPureTone(label: String) {
         val frequency = frequencies[label] ?: return
         scope.launch(Dispatchers.Default) {
@@ -194,27 +202,29 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
             val numSamples = (durationMs * sampleRate) / 1000
             val generatedSnd = ByteArray(2 * numSamples)
 
-            // Definiamo la durata in campioni della sfumatura iniziale (Attack) e finale (Release)
-            val attackSamples = (20 * sampleRate) / 1000  // 20 millisecondi di dissolvenza in entrata
-            val releaseSamples = (40 * sampleRate) / 1000 // 40 millisecondi di dissolvenza in uscita
+            // queste variabili sono state aggiunte per evitare di sentire un fastidioso scoppiettio quando si premeva un pulsate
+            // soprattuto dopo la pressione di due consecutivi, aggiungendo dissolvenza
+            val attackSamples = (20 * sampleRate) / 1000
+            val releaseSamples = (40 * sampleRate) / 1000
+
 
             for (i in 0 until numSamples) {
+                //calcolo del suono che deve emettere il pulsante
                 val angle = 2.0 * Math.PI * i / (sampleRate / frequency)
 
-                // Calcoliamo il fattore di volume dinamico per eliminare i colpi di inizio/fine
+                //variabile per il cambio di ferequenza in entrate e in uscita, cos' si sente un suono che svanisce (di poco), in modo da non sentire lo scoppiettio
+                // parte da un volume un po' più basso, al centro arriva al massimo e poi ritorno al volume iniziale, tipo una specie di gaussiana
                 val amplitudeFactor = when {
                     i < attackSamples -> {
-                        // Sfumatura lineare in entrata (da 0 a 1)
                         i.toDouble() / attackSamples
                     }
                     i > (numSamples - releaseSamples) -> {
-                        // Sfumatura lineare in uscita (da 1 a 0)
                         (numSamples - i).toDouble() / releaseSamples
                     }
                     else -> 1.0 // Volume pieno al centro del suono
                 }
 
-                // Generiamo il campione moltiplicandolo per il fattore di volume dinamico
+                // generato il campione moltiplicandolo per il fattore di volume dinamico
                 // altrimenti si sentiva una specie di scoppio ad inizio e fine del suono
                 val sample = (Math.sin(angle) * 32767 * amplitudeFactor).toInt()
 
@@ -223,7 +233,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                 generatedSnd[2 * i + 1] = ((sample and 0xff00) shr 8).toByte()
             }
 
-            // variabile di audio per i pulsanti
+            // variabile audio per i pulsanti
             val audioTrack = AudioTrack(
                 AudioManager.STREAM_MUSIC,
                 sampleRate,
@@ -261,8 +271,9 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
 
     // Gestione dell'animazione del computer senza ripartire da zero alla rotazione dello schermo
     LaunchedEffect(started, computerSeq, isPaused) {
-        //solo se è iniziata la partita, la stringa del computer non è vuota e NON siamo in pausa
-        // entr ain questo if per continuare con la sequenza
+
+        //solo se è iniziata la partita, la stringa del computer non è vuota e non siamo in pausa
+        // entra in questo if per continuare con la sequenza, altrimenti sta fermo
         if (started && computerSeq.isNotEmpty() && !isPaused) {
             // indici per capire a che punto è il computer con la sua sequenza
             if (currentAnimIndex == -1) {
@@ -274,11 +285,12 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                 val char = computerSeq[currentAnimIndex]
                 // delay per far vedere all'utente la mossa
                 delay(200)
+
                 // Controllo di sicurezza se l'utente mette in pausa proprio mentre la coroutine sta aspettando
                 if (isPaused) break
                 activeHighlight = char.toString()
 
-                // --- NUOVO: Riproduce il suono associato alla nota che il computer sta mostrando ---
+                // Riproduce il suono associato alla nota che il computer sta mostrando, così anche il pc fa suoni mentre sta facendo la sua sequenza
                 playPureTone(char.toString())
 
                 //tempo totale tra una mossa e l'altra
@@ -297,17 +309,18 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     // Calcolo dinamico del reale stato del turno utente (tiene conto dello stato di avanzamento dell'animazione PC e della pausa)
     val isUserTurnNow = started && !isPaused && (currentAnimIndex == -1 || currentAnimIndex >= computerSeq.length)
 
-    // Calcolo dinamico del turno del computer (ovvero quando NON è il turno dell'utente)
+    // Calcolo dinamico del turno del computer (ovvero quando non è il turno dell'utente)
     val isComputerTurnNow = started && !isUserTurnNow
 
     // Funzione centralizzata per gestire l'uscita salvando la partita se è in corso
     val handleExit = {
+
         // recupero l'ultima sequenza valida digitata se l'utente si trova nel mezzo dell'esposizione del PC
+        // ecco il modivo della famosa variabile di backup della sequenza
         var stringToSave = if (userSequence.isNotEmpty()) userSequence else userSequenceBackup
 
-        //se si esce dalla schermata senza aver cliccato nulla lato utente, il gioco uscirà senza salvare al partita, questo avviene solo se il pc sta presentando, altrimenti la partita salva l'errore alla prima lettera
-        //
-        if (started && computerSeq.length == 1 && isComputerTurnNow) {
+        // --- MODIFICATO: Se siamo alla prima stringa presentata dal computer e non ha finito di presentarla (turno del PC attivo), usciamo senza salvare nulla
+        if (started && computerSeq.length == 1 && isComputerTurnNow && currentAnimIndex != -2) {
             userSequence = ""
             userSequenceBackup = ""
             started = false
@@ -315,22 +328,23 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
             currentAnimIndex = -1
             onBackClicked()
         } else {
-            // --- MODIFICATO: Se la partita è avviata, ma l'utente esce senza aver mai digitato nulla (anche alla prima mossa),
-            // forziamo la stringa a essere registrata come un errore immediato sulla prima sequenza del computer.
+
+            //condizione per uscire dalla partita, anche se l'utente non ha sbagliato ma la presentazione della prima stringa da parte del computer è finita
+            // in pratica salvo al primo errore (la prima lettera messa)
             if (started && stringToSave.isEmpty() && computerSeq.isNotEmpty()) {
                 stringToSave = "" // Rimane vuota in modo che seqExitHighlightedError veda l'interruzione fin dall'inizio
             }
 
-            // Ora salviamo sia se c'è del testo, sia se l'utente esce intenzionalmente alla prima mossa senza input
-            if (started && (stringToSave.isNotEmpty() || computerSeq.isNotEmpty())) {
+            // esce e salva se non ho inserito testo da parte dell'utente, mettendo in rosso la prima elttera del pc
+            if (started && (stringToSave.isNotEmpty() || computerSeq.isNotEmpty() || currentAnimIndex == -2)) {
                 onFinishClicked(seqExitHighlightedError(computerSeq, stringToSave))
                 userSequence = ""
                 userSequenceBackup = ""
                 started = false
                 isPaused = false
                 currentAnimIndex = -1 // Resetti l'indice anche qui per sicurezza
-                onBackClicked() // Torna indietro dopo aver salvato la partita terminata con successo
             }
+
             // di default, se la stringa è vuota, quella inserita dall'utente (ergo alla prima volta che si entra nella schermata e si preme avvio)
             // esce senza salvare nulla, avviene solo se non metto input
             else onBackClicked()
@@ -338,6 +352,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     }
 
     // Intercetta il tasto back fisico del telefono e lo costringe a usare handleExit
+    // altrimetni all'uscita non salvava la partita
     BackHandler {
         handleExit()
     }
@@ -355,7 +370,8 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                 userSequence = buttonLabel
             else
                 userSequence = userSequence + ", " + buttonLabel
-            //variabile generata per confronto con stringa del computer
+
+            //variabile generata per confronto con stringa del computer, clean perchè non presenta i due caratteri per colorarla a livello grafico di schermata
             val cleanUserSeq = userSequence.replace(", ", "")
 
             // sincronizzo la variabile di backup a ogni tocco valido dell'utente
@@ -371,6 +387,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
                         }
                     }
                 } else {
+
                     // condizione per l'errore di input da parte dell'utente
                     // Diventa rosso all'istante, ma dopo 300ms torna normale fissa
                     isErrorActive = true
@@ -391,7 +408,7 @@ fun SimonSessionScreen(onFinishClicked: (String) -> Unit, onBackClicked: () -> U
     // ho mantenuto però l'ordine dei colori, sono praticamente li stessi ma girati
     if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
 
-        //Lo sfondo diventa rosso se l'utente ha sbagliato, così c'è un feedback visivo sull'errore
+        // --- MODIFICATO: Lo sfondo diventa rosso se l'utente ha sbagliato ---
         Box(modifier = Modifier.fillMaxSize().background(if (isErrorActive) Color(0x44FF0000) else Color.Transparent)) {
             // Pulsante per tornare alla cronologia
             ExtendedFloatingActionButton(onClick = handleExit,
@@ -524,7 +541,7 @@ fun seqExitHighlightedError(compseq: String, seqgen: String): String {
     var exitSeq = ""
     var errorIndex = -1
 
-    // 1. Aggiungiamo i caratteri che l'utente ha premuto correttamente (in Nero)
+    // Aggiungiamo i CARATTERI che l'utente ha premuto correttamente (in Nero)
     // Troviamo anche il punto preciso in cui le due stringhe si separano (l'errore)
     for (i in userClean.indices) {
         if (i < compseq.length && userClean[i] == compseq[i]) {
@@ -535,25 +552,26 @@ fun seqExitHighlightedError(compseq: String, seqgen: String): String {
         }
     }
 
-    // Se l'utente ha commesso un errore esplicito (ha premuto un tasto sbagliato)
+    // se si commette un errore esplicito (premuto un tasto sbagliato)
     if (errorIndex != -1) {
-        // Se l'utente ha sbagliato prima della fine, marchiamo l'errore con lo slash / (Rosso Acceso)
-        // CORRETTO: Prende il carattere errato digitato dall'utente (userClean)
+        // se si commette un errore prima della fine, marchio l'errore con lo slash / (Rosso Acceso)
+        // prende il carattere errato digitato dall'utente (userClean)
         exitSeq += "/" + userClean[errorIndex]
 
-        // Tutto il resto della sequenza rimasta la marchiamo con il simbolo & (Rosso Chiaro)
+        // il resto della sequenza rimasta la marchiamo con il simbolo & (Rosso Chiaro)
         if (errorIndex + 1 < compseq.length) {
             exitSeq += "&" + compseq.substring(errorIndex + 1)
         }
     }
-    // Se l'utente ha premuto tutto giusto ma si è fermato a metà (ha cliccato End Game volontariamente)
+    // Se non si commette un errore ma ci si ferma cliccando volontariamente "end game" o il tasto "back" o quello di sistema, salva fino alla stringa precedente
     else if (userClean.length < compseq.length) {
         val nextCorrectIndex = userClean.length
 
-        // Non ha inserito lettere sbagliate, quindi marchiamo come interruzione (/) la mossa che il PC si aspettava
+        // lo slash lo metto quando l'utente sbaglia la mossa che il pc si aspettava, marchiandola in rosso acceso
         exitSeq += "/" + compseq[nextCorrectIndex]
 
-        // Tutto il resto della sequenza rimasta la marchiamo con il simbolo & (Rosso Chiaro)
+        // il resto della sequenza (quella non inserita dall'utente dato che si blocca al primo errore, viene marchiata in rosso chiaro)
+        // la stringa viene presa dalla sequenza del pc, da dopo l'indice dell'errore
         if (nextCorrectIndex + 1 < compseq.length) {
             exitSeq += "&" + compseq.substring(nextCorrectIndex + 1)
         }

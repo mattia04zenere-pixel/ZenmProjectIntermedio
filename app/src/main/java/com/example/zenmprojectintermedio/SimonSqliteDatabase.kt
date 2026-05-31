@@ -16,7 +16,7 @@ class SimonSqliteDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE
         private const val COLUMN_SEQUENCE = "sequence"
     }
 
-    // Qui creiamo fisicamente la tabella con una query SQL pura
+    // creazioen fisica delle colenne del database
     override fun onCreate(db: SQLiteDatabase) {
         val createTableQuery = ("CREATE TABLE $TABLE_NAME ("
                 + "$COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -29,7 +29,7 @@ class SimonSqliteDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE
         onCreate(db)
     }
 
-    // Metodo per inserire una partita nel database SQL
+    // funzione per inserire la partita nel database
     fun insertGame(sequence: String) {
         val db = this.writableDatabase
         val values = ContentValues().apply {
@@ -39,11 +39,11 @@ class SimonSqliteDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE
         db.close()
     }
 
-    // Metodo per leggere tutte le partite dal database SQL
+    // funzione per ottenere tutte le partite dal database, legendo quelle salvate
     fun getAllGames(): List<String> {
         val list = mutableListOf<String>()
         val db = this.readableDatabase
-        // Query SQL per prendere i dati ordinati dall'ultimo inserito
+        // query per prendere le partite salvate, in linguaggio sql
         val cursor = db.rawQuery("SELECT $COLUMN_SEQUENCE FROM $TABLE_NAME ORDER BY $COLUMN_ID DESC", null)
 
         if (cursor.moveToFirst()) {

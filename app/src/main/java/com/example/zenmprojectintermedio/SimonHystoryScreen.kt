@@ -35,7 +35,8 @@ import androidx.compose.ui.unit.sp
 fun SimonHystoryScreen(
     onBackClicked: () -> Unit,
     historyList: List<String>,
-    onItemClicked: (Int) -> Unit // Aggiunta per gestire il click e passare l'indice
+    // aggiunta per gestire il click e passare l'indice
+    onItemClicked: (Int) -> Unit
 ) {
     val orientation = LocalConfiguration.current.orientation
 
@@ -70,6 +71,7 @@ fun SimonHystoryScreen(
                         .then(if (orientation == Configuration.ORIENTATION_LANDSCAPE) Modifier.align(Alignment.TopCenter) else Modifier)
                 )
             } else {
+
                 //lazycolumn per la visualizzazione delle partite giocate,
                 //se non si premono tasti si visualizzano le partite giocate fino a quel momento oppure il messaggio
                 // che non sono ancora state giocate delle partite
@@ -88,11 +90,14 @@ fun SimonHystoryScreen(
                     contentPadding = PaddingValues(bottom = 70.dp)
                 ) {
                     itemsIndexed(historyList) { index, sequence ->
-                        // Avvolgiamo l'elemento in un Box o aggiungiamo il clickable al Modifier di HistoryItem
+
+                        // metto tutto dentor un box, così da avere più possibilità di personalizzazione,
+                        // per fare in modo di riuscire ad aggiungere il clicable
                         Box(modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                // Usiamo la lambda passata dalla MainActivity che gestisce il rememberSaveable
+
+                                // utilizzo la funzione labda dalla main activity per gestire il remeber savable
                                 onItemClicked(index)
                             }
                         ) {
@@ -129,36 +134,38 @@ fun SimonHystoryScreen(
 }
 
 // Funzione interprete per convertire i tag speciali in colori reali nella lista della cronologia
+// quindi lo slash per il rosso acceso e la & per il rosso chiaro
 fun decodeStringToColors(savedString: String): AnnotatedString {
     return buildAnnotatedString {
         var currentStyle: Color =
-            Color.Black // Di base partiamo in Nero (le mosse corrette dell'utente)
+            // il colore di base è il nero per le mosse giuste fatte
+            Color.Black
         val cleanedSeq = savedString.replace("/", "").replace("&", "")
         var printCharCount = 0
         for (char in savedString) {
             when (char) {
                 '/' -> {
-                    // Quando incontra '/', la lettera successiva (l'errore) diventa Rosso Acceso
+                    // incontrando lo slash cambio il colore e metto rosso acceso
                     currentStyle = Color(0xFFFF0000)
                     continue // Salta la stampa del carattere '/' grafico
                 }
 
                 '&' -> {
-                    // Quando incontra '&', tutto il resto della sequenza non premuta diventa Rosso Chiaro
+                    // incontrando & mette il resto della sequenza il colore rosso chiaro
                     currentStyle = Color(0xFFFF8080)
                     continue // Salta la stampa del carattere '&' grafico
                 }
 
             }
 
-            // Applica il colore impostato in questo momento al carattere attuale
+            // metodo per applicare il colore voluto alla sequenza
             withStyle(style = SpanStyle(color = currentStyle, fontWeight = FontWeight.Bold)) {
                 append(char)
             }
 
             printCharCount++
 
-            // Se non è l'ultimo carattere effettivo della stringa, aggiungiamo il separatore in Nero
+            // condizione per aggiungere la virgola in nero, solo se il carattere non è l'ultimo della stringa
             if (printCharCount < cleanedSeq.length) {
                 withStyle(style = SpanStyle(color = Color.Black, fontWeight = FontWeight.Normal)) {
                     append(", ")
@@ -209,6 +216,7 @@ fun HistoryItem(gameNumber: Int, sequence: String) {
             val points = if (cleanUserPart.isEmpty()) 0 else cleanUserPart.length - 1
 
             Row {
+
                 //testo che visualizza il numero di tasti premuti e la sequenza di tasti premuti
                 Text(
                     text = points.toString(),

@@ -76,13 +76,13 @@ fun SimonGameDetailsScreen(
         verticalArrangement = Arrangement.Center
     ) {
 
-        //numero di pulsanti premuti senza errori visualizzato come primo elemento
-        // Modificato per calcolare i punti reali basandosi solo su ciò che l'utente ha indovinato (prima del tag '/')
+        // numero di pulsanti premuti senza errori visualizzato come primo elemento
+        // modificato per calcolare i punti reali basandosi solo su ciò che l'utente ha indovinato (prima del tag '/')
         val cleanedUserPart = sequence.replace("/", "").replace("&", "")
         //calcolo del punteggio fatto dal giocatore (prende la sequenza precedente)
         val points = if (cleanedUserPart.isEmpty()) 0 else cleanedUserPart.length - 1
 
-        // Gestione grammaticale corretta per Punti/Punto
+        // gestione grammaticale corretta per Punti/Punto
         val pointsText = if (points == 1) {
             "$points " + stringResource(R.string.point)
         } else {
@@ -95,20 +95,13 @@ fun SimonGameDetailsScreen(
             fontWeight = FontWeight.Bold
         )
 
-        // Il conteggio totale dei clic visibili (inclusi errore e rimanenti del PC)
+        // il conteggio totale dei clic visibili (inclusi errore e rimanenti del PC)
         val clickCount = cleanedUserPart.length
 
-        //vecchia stringa rimossa, ora dice il livello del gioco cui si è arrivati
+        // vecchia stringa rimossa, ora dice il livello del gioco cui si è arrivati
         // livello 1 è il primo, si sale a mano a mano che le stringhe diventano più lunghe
         val levelText = stringResource(R.string.level) + " " + clickCount.toString()
 
-
-        /* if (clickCount == 1) {
-              "$clickCount " + stringResource(R.string.clickedNum)
-          } else {
-              "$clickCount " + stringResource(R.string.clickedNums)
-          }
-  */
         Text(
             text = levelText,
             fontSize = 24.sp,
@@ -118,9 +111,9 @@ fun SimonGameDetailsScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Sequenza completa visualizzata in grande e senza troncamenti
+        // sequenza completa visualizzata in grande e senza troncamenti
         Text(
-            // Modificato per passare la stringa distribuita con i 3 colori e separata da virgole
+            // modificato per passare la stringa distribuita con i 3 colori e separata da virgole
             text = decodeStringToColorsDetails(sequence),
             fontSize = 32.sp,
             lineHeight = 40.sp,
@@ -129,7 +122,7 @@ fun SimonGameDetailsScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // Pulsante per tornare alla cronologia
+        // pulsante per tornare alla cronologia
         ExtendedFloatingActionButton(onClick = onBackClicked) {
             Text(text = stringResource(R.string.back))
         }
